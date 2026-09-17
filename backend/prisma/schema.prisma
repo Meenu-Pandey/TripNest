@@ -1,0 +1,508 @@
+// TripNest — Prisma schema (proposal for review, not yet wired into the app)
+// Money: all monetary columns are BigInt minor units (e.g. paise/cents).
+// See docs/decisions.md (to be written) for the full rationale.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+enum TripRole {
+  OWNER
+  MEMBER
+  VIEWER
+}
+
+// For this version we explicitly support a fixed set of currencies, all
+// with 2 decimal places. We do NOT claim general ISO-4217 support — adding
+// a currency later means adding an enum value + confirming its minor-unit
+// exponent, not silently accepting any 3-letter code.
+enum Currency {
+  INR
+  USD
+  EUR
+  GBP
+}
+
+enum TripStatus {
+  PLANNING
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum InviteStatus {
+  PENDING
+  ACCEPTED
+  REVOKED
+  EXPIRED
+}
+
+enum SplitType {
+  EQUAL
+  EXACT
+  PERCENTAGE
+  SHARES
+}
+
+enum SettlementStatus {
+  SUGGESTED
+  PAYER_MARKED_PAID
+  PAID
+  DISPUTED
+  CANCELLED
+}
+
+enum ActivityAction {
+  TRIP_CREATED
+  TRIP_UPDATED
+  MEMBER_INVITED
+  MEMBER_JOINED
+  MEMBER_ROLE_CHANGED
+  MEMBER_REMOVED
+  PLACE_ADDED
+  PLACE_UPDATED
+  PLACE_REMOVED
+  ITINERARY_ITEM_ADDED
+  ITINERARY_ITEM_UPDATED
+  ITINERARY_ITEM_REMOVED
+  EXPENSE_CREATED
+  EXPENSE_UPDATED
+  EXPENSE_DELETED
+  SETTLEMENT_SUGGESTED
+  SETTLEMENT_MARKED_PAID
+  SETTLEMENT_CONFIRMED
+  SETTLEMENT_ATTESTED
+  SETTLEMENT_DISPUTED
+  BUDGET_CATEGORY_ADDED
+  BUDGET_CATEGORY_UPDATED
+  BUDGET_CATEGORY_REMOVED
+  MEMORY_ADDED
+  TRIP_COMPLETED
+}
+
+enum NotificationType {
+  TRIP_INVITATION
+  MEMBER_JOINED
+  EXPENSE_ADDED
+  ROLE_CHANGED
+}
+
+// ---------------------------------------------------------------------------
+// User
+// ---------------------------------------------------------------------------
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  upiId        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  memberships     TripMember[]
+  sentInvites     TripInvite[]   @relation("InviteSender")
+  activityEntries Activity[]
+  notifications   Notification[]
+  idempotencyKeys IdempotencyKey[]
+}
+
+// ---------------------------------------------------------------------------
+// Trip
+// ---------------------------------------------------------------------------
+
+model Trip {
+  id           String     @id @default(uuid())
+  name         String
+  description  String?
+  destination  String?
+  startDate    DateTime
+  endDate      DateTime
+  budget       BigInt? // minor units; optional — not every trip has a budget set
+  currency     Currency   @default(INR) // one currency per trip for this version; see Currency enum
+  status       TripStatus @default(PLANNING)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  members         TripMember[]
+  invites         TripInvite[]
+  places          Place[]
+  itineraryItems  ItineraryItem[]
+  expenses        Expense[]
+  settlements     Settlement[]
+  activityLog     Activity[]
+  budgetCategories BudgetCategory[]
+  notifications   Notification[]
+  memoryPhotos    MemoryPhoto[]
+
+  @@index([status])
+}
+
+// ---------------------------------------------------------------------------
+// TripMember — the join between User and Trip, and the source of truth
+// for trip ownership (there is deliberately no Trip.ownerId column).
+// ---------------------------------------------------------------------------
+
+model TripMember {
+  id       String   @id @default(uuid())
+  tripId   String
+  userId   String
+  role     TripRole @default(MEMBER)
+  joinedAt DateTime @default(now())
+
+  trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  paidExpenses      Expense[]       @relation("ExpensePaidBy")
+  expenseSplits     ExpenseSplit[]
+  settlementsFrom        Settlement[]            @relation("SettlementFrom")
+  settlementsTo          Settlement[]            @relation("SettlementTo")
+  settlementAttestations SettlementAttestation[]
+  memoryPhotos           MemoryPhoto[]
+
+  // "At most one OWNER per trip" is enforced at the database level via a
+  // partial unique index (see prisma/migrations/.../manual.sql):
+  //   CREATE UNIQUE INDEX trip_member_one_owner_per_trip
+  //     ON "TripMember" ("tripId") WHERE role = 'OWNER';
+  // Prisma's schema DSL cannot express a WHERE clause on @@unique, so this
+  // index is added by hand-editing the generated migration — not by
+  // pretending @@unique supports partial conditions.
+  //
+  // "At least one OWNER per trip" (a trip can never have zero owners)
+  // CANNOT be expressed as a static SQL constraint — it depends on the
+  // *last* remaining owner, which is a business rule, not a shape rule.
+  // This is enforced in the members service: removing/demoting the sole
+  // remaining OWNER is rejected before it reaches the database, and
+  // ownership transfer is done as a single transaction (see decisions.md).
+  @@unique([tripId, userId])
+  @@index([tripId])
+  @@index([userId])
+}
+
+// ---------------------------------------------------------------------------
+// TripInvite — a pending proposal to join, distinct from actual membership.
+// ---------------------------------------------------------------------------
+
+model TripInvite {
+  id          String       @id @default(uuid())
+  tripId      String
+  email       String
+  role        TripRole     @default(MEMBER)
+  tokenHash   String       @unique // hashed token; raw token only ever sent to invitee, never stored
+  status      InviteStatus @default(PENDING)
+  invitedById String
+  expiresAt   DateTime
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  trip      Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  invitedBy User @relation("InviteSender", fields: [invitedById], references: [id], onDelete: Restrict)
+
+  // Only one PENDING invite per (trip, email) is enforced at the database
+  // level via a partial unique index added by hand to the migration SQL
+  // (Prisma's @@unique cannot express a WHERE clause):
+  //   CREATE UNIQUE INDEX trip_invite_one_pending_per_email
+  //     ON "TripInvite" ("tripId", "email") WHERE status = 'PENDING';
+  // The service layer also checks this before insert, to return a clean
+  // business error (DUPLICATE_PENDING_INVITE) instead of surfacing a raw
+  // Postgres unique-violation to the client.
+  @@index([tripId])
+  @@index([email])
+}
+
+// ---------------------------------------------------------------------------
+// Place
+// ---------------------------------------------------------------------------
+
+model Place {
+  id               String   @id @default(uuid())
+  tripId           String
+  name             String
+  address          String?
+  latitude         Float?
+  longitude        Float?
+  category         String?
+  rating           Float? // provider-supplied display rating (e.g. 1-5);
+  // Float is acceptable here — unlike every money-adjacent field in this
+  // schema, a rating is never used in exact arithmetic that must
+  // reconcile, only compared/displayed, so there's no precision risk to
+  // guard against. See docs/decisions.md's recommendation-engine entry.
+  externalProvider String? // e.g. "google" — nullable, not assumed
+  externalPlaceId  String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  trip           Trip            @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  itineraryItems ItineraryItem[]
+  memoryPhotos   MemoryPhoto[]
+
+  @@index([tripId])
+  @@index([externalProvider, externalPlaceId])
+}
+
+// ---------------------------------------------------------------------------
+// ItineraryItem
+// ---------------------------------------------------------------------------
+
+model ItineraryItem {
+  id        String    @id @default(uuid())
+  tripId    String
+  placeId   String?
+  date      DateTime  @db.Date
+  startTime DateTime?
+  endTime   DateTime?
+  order     Int
+  title     String
+  notes     String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  trip  Trip   @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  place Place? @relation(fields: [placeId], references: [id], onDelete: SetNull)
+
+  @@index([tripId, date, order])
+}
+
+// ---------------------------------------------------------------------------
+// Expense
+// ---------------------------------------------------------------------------
+
+model Expense {
+  id          String    @id @default(uuid())
+  tripId      String
+  paidById    String // references TripMember, not User — see docs/decisions.md
+  description String
+  amount      BigInt // minor units; amount > 0 — Zod validates on input, DB
+  // check constraint (added by hand, see manual.sql) is the backstop:
+  //   ALTER TABLE "Expense" ADD CONSTRAINT expense_amount_positive
+  //     CHECK (amount > 0);
+  category    String?
+  date        DateTime  @db.Date
+  notes       String?
+  splitType   SplitType
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  trip   Trip           @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  paidBy TripMember     @relation("ExpensePaidBy", fields: [paidById], references: [id], onDelete: Restrict)
+  splits ExpenseSplit[]
+
+  @@index([tripId, date])
+}
+
+// ---------------------------------------------------------------------------
+// ExpenseSplit — one row per participant per expense.
+// ---------------------------------------------------------------------------
+
+model ExpenseSplit {
+  id           String  @id @default(uuid())
+  expenseId    String
+  tripMemberId String
+  shareAmount  BigInt // minor units; the actual computed amount owed, always
+  // exact and >= 0. DB check constraint (manual.sql):
+  //   ALTER TABLE "ExpenseSplit" ADD CONSTRAINT expense_split_nonnegative
+  //     CHECK ("shareAmount" >= 0);
+  // Inputs preserved for auditability of how shareAmount was derived:
+  inputBasisPoints Int? // used when Expense.splitType == PERCENTAGE — an
+  // integer 1-10000 (10000 = 100.00%), NOT a Float. Storing this as a
+  // float would reintroduce exactly the money-precision problem BigInt
+  // minor units exist to avoid elsewhere in this schema (see
+  // docs/decisions.md #1) — even though this field is for auditability
+  // display rather than further arithmetic, there's no reason to accept
+  // any imprecision here when an exact integer representation costs
+  // nothing. See src/modules/expenses/domain/split/percentageSplit.ts.
+  inputShares Int? // used when Expense.splitType == SHARES
+
+  expense    Expense    @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  tripMember TripMember @relation(fields: [tripMemberId], references: [id], onDelete: Restrict)
+
+  @@unique([expenseId, tripMemberId])
+  @@index([expenseId])
+  @@index([tripMemberId])
+}
+
+// ---------------------------------------------------------------------------
+// Settlement — persisted suggested settlement transactions.
+// Balance calculation NEVER reads from this table; it always derives from
+// Expense/ExpenseSplit. This table exists for history/audit of suggestions.
+// ---------------------------------------------------------------------------
+
+model Settlement {
+  id                   String           @id @default(uuid())
+  tripId               String
+  fromMemberId         String
+  toMemberId           String
+  amount               BigInt // minor units, always > 0
+  status               SettlementStatus @default(SUGGESTED)
+  paymentMethod        String?
+  payerMarkedPaidAt    DateTime?
+  recipientConfirmedAt DateTime?
+  disputedAt           DateTime?
+  disputeReason        String?
+  notes                String?
+  expenseId            String?
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @default(now()) @updatedAt
+
+  trip         Trip                    @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  fromMember   TripMember              @relation("SettlementFrom", fields: [fromMemberId], references: [id], onDelete: Restrict)
+  toMember     TripMember              @relation("SettlementTo", fields: [toMemberId], references: [id], onDelete: Restrict)
+  attestations SettlementAttestation[]
+
+  @@index([tripId])
+}
+
+model SettlementAttestation {
+  id           String   @id @default(uuid())
+  settlementId String
+  witnessId    String
+  createdAt    DateTime @default(now())
+
+  settlement Settlement @relation(fields: [settlementId], references: [id], onDelete: Cascade)
+  witness    TripMember @relation(fields: [witnessId], references: [id], onDelete: Restrict)
+
+  @@unique([settlementId, witnessId])
+  @@index([settlementId])
+  @@index([witnessId])
+}
+
+// ---------------------------------------------------------------------------
+// Activity — append-only audit log.
+// ---------------------------------------------------------------------------
+
+model Activity {
+  id        String          @id @default(uuid())
+  tripId    String
+  actorId   String?
+  action    ActivityAction
+  entityId  String? // id of the affected entity (expense, member, place, ...)
+  metadata  Json? // small, non-sensitive structured context only
+  createdAt DateTime        @default(now())
+
+  trip  Trip  @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  actor User? @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([tripId, createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// BudgetCategory — pre-trip planning estimates, explicitly NOT actual
+// expenses and never treated as money owed. See docs/budget.md.
+// ---------------------------------------------------------------------------
+
+model BudgetCategory {
+  id                 String   @id @default(uuid())
+  tripId             String
+  category           String // free-form (e.g. "Accommodation"), not an enum —
+  // groups don't share a fixed taxonomy of expense categories, and
+  // forcing one would either be too restrictive or need constant
+  // maintenance. Uniqueness per trip (below) still prevents duplicates.
+  plannedAmountMinor BigInt // minor units, > 0 — a planning line item of
+  // ₹0 has no purpose; remove the category instead.
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+
+  @@unique([tripId, category])
+  @@index([tripId])
+}
+
+// ---------------------------------------------------------------------------
+// IdempotencyKey — see docs/decisions.md's idempotency entry and
+// src/middleware/idempotency.ts. Deliberately NOT trip-scoped: a client
+// generates one key per logical write request, regardless of which
+// resource that request targets.
+// ---------------------------------------------------------------------------
+
+model IdempotencyKey {
+  id             String    @id @default(uuid())
+  userId         String
+  key            String // client-generated, opaque
+  requestHash    String // sha256 of method+path+body — detects the same
+  // key being reused for a genuinely different request, which is a
+  // client bug, not a legitimate retry
+  responseStatus Int? // null while the original request is still being
+  // processed — see src/middleware/idempotency.ts. A concurrent request
+  // with the same key that finds this still null is told "already being
+  // processed" (a 409), never allowed to re-run the business operation.
+  responseBody   Json?
+  createdAt      DateTime  @default(now())
+  expiresAt      DateTime // expired rows are treated as absent at lookup
+  // time (see docs/decisions.md) — no separate sweep job in this version,
+  // consistent with how TripInvite expiry is already handled.
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, key])
+}
+
+// ---------------------------------------------------------------------------
+// Notification — in-app only. No email/push delivery exists; see
+// docs/notifications.md for the same "clean provider boundary" pattern
+// already used for invitations.
+// ---------------------------------------------------------------------------
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  tripId    String?
+  type      NotificationType
+  payload   Json?
+  read      Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  trip Trip? @relation(fields: [tripId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read, createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// MemoryPhoto — see docs/media-storage.md and docs/decisions.md.
+//
+// Deliberately ONE model, not the "Memory" + "MemoryPhoto" pair
+// originally sketched in product discussions: a separate "Memory"
+// parent record would have had no fields of its own (every interesting
+// attribute — trip, uploader, caption, place, ordering — belongs to an
+// individual photo), so it would exist purely as an empty wrapper. Every
+// row IS a selected favorite by construction — there is no separate
+// boolean, because uploading a photo through this endpoint (capped at 2
+// per member per trip in the service layer) is what "selecting a
+// favorite" means in this implementation.
+//
+// Only the storage KEY is ever stored here — the actual image bytes live
+// wherever ObjectStorage (src/lib/storage/) puts them, never in
+// PostgreSQL.
+// ---------------------------------------------------------------------------
+
+model MemoryPhoto {
+  id           String   @id @default(uuid())
+  tripId       String
+  uploadedById String
+  storageKey   String
+  caption      String?
+  placeId      String?
+  order        Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  trip       Trip       @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  uploadedBy TripMember @relation(fields: [uploadedById], references: [id], onDelete: Restrict)
+  // Restrict, not Cascade: a member's contributed memories are trip
+  // history, same reasoning as financial records — see
+  // docs/database.md's Delete/Restrict table and the corresponding
+  // check added to members.service.ts's removeMember.
+  place Place? @relation(fields: [placeId], references: [id], onDelete: SetNull)
+
+  @@index([tripId])
+  @@index([uploadedById])
+}

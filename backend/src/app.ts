@@ -1,0 +1,108 @@
+import cors from 'cors';
+import express, { type Express } from 'express';
+import helmet from 'helmet';
+import pinoHttp from 'pino-http';
+import { env } from '@/config/env';
+import { logger } from '@/lib/logger';
+import { prisma } from '@/lib/prisma';
+import { errorHandler, notFoundHandler } from '@/middleware/errorHandler';
+import { requestId } from '@/middleware/requestId';
+import { authRouter } from '@/modules/auth/auth.routes';
+import { activityRouter } from '@/modules/activity/activity.routes';
+import { budgetRouter } from '@/modules/budget/budget.routes';
+import { expenseRouter } from '@/modules/expenses/expenses.routes';
+import { geocodingRouter } from '@/modules/geocoding/geocoding.routes';
+import { itineraryItemRouter, itineraryTripRouter } from '@/modules/itinerary/itinerary.routes';
+import { inviteAcceptRouter } from '@/modules/members/invite-accept.routes';
+import { memberRouter } from '@/modules/members/members.routes';
+import { memoryRouter } from '@/modules/memories/memories.routes';
+import { notificationsRouter } from '@/modules/notifications/notifications.routes';
+import { placeRouter } from '@/modules/places/places.routes';
+import { recommendationsRouter } from '@/modules/recommendations/recommendations.routes';
+import { tripRouter } from '@/modules/trips/trip.routes';
+import { usersRouter } from '@/modules/users/users.routes';
+import { weatherRouter } from '@/modules/weather/weather.routes';
+import { routingRouter } from '@/modules/routing/routing.routes';
+import { aiStatusRouter, aiTripRouter } from '@/modules/ai/ai.routes';
+
+/**
+ * Builds the Express app without starting it. Kept separate from
+ * server.ts so integration tests can import `app` directly with
+ * Supertest, without binding a real port.
+ */
+export function createApp(): Express {
+  const app = express();
+
+  app.disable('x-powered-by');
+  app.use(helmet());
+  app.use(
+    cors({
+      origin: env.CORS_ORIGIN.split(',').map((origin) => origin.trim()),
+    }),
+  );
+  app.use(express.json({ limit: '1mb' }));
+  app.use(requestId);
+  app.use(
+    pinoHttp({
+      logger,
+      genReqId: (req) => req.id,
+      customLogLevel: (_req, res, err) => {
+        if (err || res.statusCode >= 500) return 'error';
+        if (res.statusCode >= 400) return 'warn';
+        return 'info';
+      },
+    }),
+  );
+
+  app.get('/health', (_req, res) => {
+    res.status(200).json({ success: true, data: { status: 'ok' } });
+  });
+
+  // Distinct from /health: /health only says "the process is up," which
+  // is true even if the database is unreachable. /ready additionally
+  // confirms the app can actually serve real requests — useful as a
+  // Kubernetes-style readiness probe (traffic should route here) versus
+  // liveness probe (should this process be restarted).
+  app.get('/ready', (_req, res) => {
+    prisma.$queryRaw`SELECT 1`.then(
+      () => res.status(200).json({ success: true, data: { status: 'ready' } }),
+      (err: unknown) => {
+        logger.error({ err }, 'Readiness check failed: database unreachable');
+        res.status(503).json({
+          success: false,
+          error: { code: 'NOT_READY', message: 'Database unreachable' },
+        });
+      },
+    );
+  });
+
+  // Serves files written by LocalDiskStorage (src/lib/storage/) — see
+  // docs/media-storage.md for why this is the right call for local/dev
+  // use and what changes for a real production deployment.
+  app.use('/uploads', express.static(env.UPLOADS_DIR));
+
+  app.use('/api/v1/auth', authRouter);
+  app.use('/api/v1/users', usersRouter);
+  app.use('/api/v1/trips', tripRouter);
+  app.use('/api/v1/trips', memberRouter);
+  app.use('/api/v1/trips', expenseRouter);
+  app.use('/api/v1/trips', placeRouter);
+  app.use('/api/v1/trips', itineraryTripRouter);
+  app.use('/api/v1/trips', activityRouter);
+  app.use('/api/v1/trips', budgetRouter);
+  app.use('/api/v1/trips', recommendationsRouter);
+  app.use('/api/v1/trips', weatherRouter);
+  app.use('/api/v1/trips', memoryRouter);
+  app.use('/api/v1/itinerary', itineraryItemRouter);
+  app.use('/api/v1/invites', inviteAcceptRouter);
+  app.use('/api/v1/notifications', notificationsRouter);
+  app.use('/api/v1/geocoding', geocodingRouter);
+  app.use('/api/v1/trips', routingRouter);
+  app.use('/api/v1/trips', aiTripRouter);
+  app.use('/api/v1/ai', aiStatusRouter);
+
+  app.use(notFoundHandler);
+  app.use(errorHandler);
+
+  return app;
+}

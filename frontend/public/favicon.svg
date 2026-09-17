@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Travel Route (S-Curve) -->
+  <path d="M 15 25 C 25 60, 60 55, 85 25" stroke="#D55E38" stroke-width="6" stroke-linecap="round" stroke-dasharray="12 12" fill="none" />
+  
+  <!-- Start Pin -->
+  <g transform="translate(15, 25) scale(2) translate(-12, -24)">
+    <path d="M 12 24 C 7 18, 5 15, 5 11 C 5 7.13, 8.13 4, 12 4 C 15.87 4, 19 7.13, 19 11 C 19 15, 17 18, 12 24 Z" fill="#D55E38" />
+    <circle cx="12" cy="11" r="3" fill="#FAF8F5" />
+  </g>
+  
+  <!-- Destination Pin -->
+  <g transform="translate(85, 25) scale(2) translate(-12, -24)">
+    <path d="M 12 24 C 7 18, 5 15, 5 11 C 5 7.13, 8.13 4, 12 4 C 15.87 4, 19 7.13, 19 11 C 19 15, 17 18, 12 24 Z" fill="#D55E38" />
+    <circle cx="12" cy="11" r="3" fill="#FAF8F5" />
+  </g>
+</svg>

@@ -1,0 +1,98 @@
+# =========================================================
+# TripNest - Git Ignore
+# =========================================================
+
+# -------------------------
+# Dependencies
+# -------------------------
+node_modules/
+**/node_modules/
+.pnpm-store/
+
+# -------------------------
+# Environment / Secrets
+# -------------------------
+.env
+.env.*
+!.env.example
+
+# -------------------------
+# Build / Generated
+# -------------------------
+dist/
+build/
+**/dist/
+**/build/
+coverage/
+**/coverage/
+.vite/
+.turbo/
+*.tsbuildinfo
+
+# -------------------------
+# Logs
+# -------------------------
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# -------------------------
+# Backend Runtime
+# -------------------------
+backend/uploads/
+
+# -------------------------
+# Backend Generated / Local Docs
+# -------------------------
+backend/docs/
+
+# -------------------------
+# Puppeteer QA
+# -------------------------
+puppeteer_qa/node_modules/
+puppeteer_qa/screenshots/
+puppeteer_qa/artifacts/
+puppeteer_qa/reports/
+puppeteer_qa/*.log
+puppeteer_qa/*.png
+
+# -------------------------
+# Temporary / Scratch Files
+# -------------------------
+scratch_*.js
+scratch_*.ts
+curl_output.txt
+
+# -------------------------
+# Local Database Files
+# -------------------------
+*.db
+*.sqlite
+*.sqlite3
+
+# -------------------------
+# OS Files
+# -------------------------
+.DS_Store
+Thumbs.db
+desktop.ini
+
+puppeteer_qa/qa_report.json
+
+# -------------------------
+# IDE / Editor
+# -------------------------
+.vscode/
+.idea/
+*.iml
+
+# -------------------------
+# Temporary Editor Files
+# -------------------------
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
