@@ -38,10 +38,13 @@ export const envSchema = z.object({
   // Email Service configuration
   EMAIL_PROVIDER: z.enum(['console', 'smtp', 'test']).default('console'),
   SMTP_HOST: z.string().optional(),
-  SMTP_PORT: z.coerce.number().optional(),
+  SMTP_PORT: z.coerce.number().int().positive().default(587),
+  SMTP_SECURE: z.preprocess((val) => val === 'true' || val === true, z.boolean()).default(false),
   SMTP_USER: z.string().optional(),
+  SMTP_PASSWORD: z.string().optional(),
   SMTP_PASS: z.string().optional(),
-  SMTP_FROM: z.string().email().default('invites@tripnest.local'),
+  EMAIL_FROM: z.string().default('TripNest <invites@tripnest.local>'),
+  SMTP_FROM: z.string().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;
@@ -59,7 +62,18 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
     }
     process.exit(1);
   }
-  return parsed.data;
+
+  const data = parsed.data;
+
+  // Backwards compatibility normalization
+  if (!data.SMTP_PASSWORD && data.SMTP_PASS) {
+    data.SMTP_PASSWORD = data.SMTP_PASS;
+  }
+  if (data.EMAIL_FROM === 'TripNest <invites@tripnest.local>' && data.SMTP_FROM) {
+    data.EMAIL_FROM = data.SMTP_FROM;
+  }
+
+  return data;
 }
 
 export const env = loadEnv();

@@ -17,11 +17,23 @@ export async function loginController(req: Request, res: Response): Promise<void
 }
 
 export async function meController(req: Request, res: Response): Promise<void> {
-  // req.userId is guaranteed set here because this route is behind
-  // the `authenticate` middleware. Delegates to the users module rather
-  // than duplicating a "look up a user by id" method in the auth module —
-  // GET /auth/me and GET /users/me answer the same underlying question
-  // ("who is this, per their own account record") through one function.
   const user = await getOwnProfile(req.userId as string);
   sendSuccess(res, 200, { user });
+}
+
+export async function changePasswordController(req: Request, res: Response): Promise<void> {
+  await authService.changePassword(req.userId as string, req.body);
+  sendSuccess(res, 200, { message: 'Password changed successfully' });
+}
+
+export async function forgotPasswordController(req: Request, res: Response): Promise<void> {
+  await authService.forgotPassword(req.body);
+  sendSuccess(res, 200, {
+    message: 'If an account exists for this email, a password reset link has been sent.',
+  });
+}
+
+export async function resetPasswordController(req: Request, res: Response): Promise<void> {
+  await authService.resetPassword(req.body);
+  sendSuccess(res, 200, { message: 'Password reset successfully' });
 }

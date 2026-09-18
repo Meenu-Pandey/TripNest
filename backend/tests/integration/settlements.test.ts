@@ -13,8 +13,6 @@ describe('Settlement Workflows Integration Tests', () => {
   let witness1User: { id: string; email: string; token: string };
   let witness2User: { id: string; email: string; token: string };
   let tripId: string;
-  let debtorMemberId: string;
-  let creditorMemberId: string;
 
   beforeAll(async () => {
     await prisma.settlementAttestation.deleteMany();
@@ -63,8 +61,8 @@ describe('Settlement Workflows Integration Tests', () => {
       return member.id;
     }
 
-    debtorMemberId = await addMember(debtorUser.token, debtorUser.id);
-    creditorMemberId = await addMember(creditorUser.token, creditorUser.id);
+    await addMember(debtorUser.token, debtorUser.id);
+    await addMember(creditorUser.token, creditorUser.id);
     await addMember(witness1User.token, witness1User.id);
     await addMember(witness2User.token, witness2User.id);
   });
@@ -144,7 +142,7 @@ describe('Settlement Workflows Integration Tests', () => {
     const getRes = await request(app)
       .get(`/api/v1/trips/${tripId}/settlements`)
       .set('Authorization', `Bearer ${debtorUser.token}`);
-    const targetSettlement = getRes.body.data.settlements.find((s: any) => s.status === 'PAYER_MARKED_PAID');
+    const targetSettlement = getRes.body.data.settlements.find((s: { status: string }) => s.status === 'PAYER_MARKED_PAID');
     const settlementId = targetSettlement.id;
 
     const res1 = await request(app)
@@ -192,7 +190,7 @@ describe('Settlement Workflows Integration Tests', () => {
       .get(`/api/v1/trips/${tripId}/settlements`)
       .set('Authorization', `Bearer ${debtorUser.token}`);
 
-    const cashSettlement = getRes.body.data.settlements.find((s: any) => s.status === 'SUGGESTED');
+    const cashSettlement = getRes.body.data.settlements.find((s: { status: string }) => s.status === 'SUGGESTED');
     expect(cashSettlement).toBeDefined();
 
     // Debtor marks as CASH paid

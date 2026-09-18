@@ -21,6 +21,8 @@ import { formatMoney } from '@/lib/money';
 import { tripsService } from '@/services/trips.service';
 import type { TripStatus } from '@/types/trips';
 
+import { getEffectiveTripStatus } from '@/lib/utils/tripStatus';
+
 export function TripsPage() {
   const navigate = useNavigate();
   const [statusFilter, setStatusFilter] = useState<'ALL' | TripStatus>('ALL');
@@ -41,15 +43,15 @@ export function TripsPage() {
   // Find the primary featured trip: either ACTIVE or the nearest upcoming PLANNING trip
   const featuredTrip = useMemo(() => {
     if (allTrips.length === 0) return null;
-    const active = allTrips.find((t) => t.status === 'ACTIVE');
+    const active = allTrips.find((t) => getEffectiveTripStatus(t) === 'ACTIVE');
     if (active) return active;
-    const planning = allTrips.find((t) => t.status === 'PLANNING');
+    const planning = allTrips.find((t) => getEffectiveTripStatus(t) === 'PLANNING');
     return planning || allTrips[0] || null;
   }, [allTrips]);
 
   const filteredTrips = useMemo(() => {
     if (statusFilter === 'ALL') return allTrips;
-    return allTrips.filter((t) => t.status === statusFilter);
+    return allTrips.filter((t) => getEffectiveTripStatus(t) === statusFilter);
   }, [allTrips, statusFilter]);
 
   // Other trips excluding the spotlight trip if statusFilter is ALL

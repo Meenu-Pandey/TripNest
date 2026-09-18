@@ -80,4 +80,40 @@ describe('envSchema', () => {
     const result = envSchema.safeParse(validBaseEnv);
     expect(result.success).toBe(true);
   });
+
+  it('parses SMTP configuration variables and EMAIL_FROM', () => {
+    const result = envSchema.safeParse({
+      ...validBaseEnv,
+      EMAIL_PROVIDER: 'smtp',
+      SMTP_HOST: 'smtp.gmail.com',
+      SMTP_PORT: '587',
+      SMTP_SECURE: 'false',
+      SMTP_USER: 'user@gmail.com',
+      SMTP_PASSWORD: 'app-password',
+      EMAIL_FROM: 'TripNest QA <user@gmail.com>',
+      APP_URL: 'https://tripnest.example.com',
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.EMAIL_PROVIDER).toBe('smtp');
+      expect(result.data.SMTP_HOST).toBe('smtp.gmail.com');
+      expect(result.data.SMTP_PORT).toBe(587);
+      expect(result.data.SMTP_SECURE).toBe(false);
+      expect(result.data.SMTP_USER).toBe('user@gmail.com');
+      expect(result.data.SMTP_PASSWORD).toBe('app-password');
+      expect(result.data.EMAIL_FROM).toBe('TripNest QA <user@gmail.com>');
+      expect(result.data.APP_URL).toBe('https://tripnest.example.com');
+    }
+  });
+
+  it('normalizes boolean string true for SMTP_SECURE', () => {
+    const result = envSchema.safeParse({
+      ...validBaseEnv,
+      SMTP_SECURE: 'true',
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.SMTP_SECURE).toBe(true);
+    }
+  });
 });

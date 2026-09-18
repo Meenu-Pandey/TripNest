@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
 import { formatMoney } from '@/lib/money';
 import { expensesService } from '@/services/expenses.service';
 import type { SettlementDTO } from '@/types/expenses';
@@ -292,6 +293,13 @@ export function PaymentSettlementModal({
                 <p className="text-xs text-sand-600">
                   Mark this offline bank transfer / split as completed. Recipient confirmation will finalize the settlement.
                 </p>
+
+                <Input
+                  placeholder="Optional reference / transaction notes"
+                  value={notes}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNotes(e.target.value)}
+                  className="h-9 text-xs bg-white"
+                />
 
                 <Button
                   type="button"

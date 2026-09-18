@@ -220,9 +220,11 @@ export function LandingPage() {
                 Bring everyone onto the same page. Propose places, vote on activities, and watch your collective ideas merge into a seamless journey. End the chaos of scattered group chats and endless links.
               </p>
               <div className="pt-2">
-                <Button variant="outline" rightIcon={<ArrowRight className="w-4 h-4" />} className="h-12 px-6 text-sm">
-                  Start a Shared Trip
-                </Button>
+                <Link to={ctaLink}>
+                  <Button variant="outline" rightIcon={<ArrowRight className="w-4 h-4" />} className="h-12 px-6 text-sm">
+                    Start a Shared Trip
+                  </Button>
+                </Link>
               </div>
             </Reveal>
           </div>

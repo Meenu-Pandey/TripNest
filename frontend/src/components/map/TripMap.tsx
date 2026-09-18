@@ -418,37 +418,42 @@ export function TripMap({
       const sourceId = 'tripnest-route-source';
       const layerId = 'tripnest-route-layer';
 
-      const geojson: GeoJSON.Feature<GeoJSON.LineString> = {
-        type: 'Feature',
+      const geojson = {
+        type: 'Feature' as const,
         properties: {},
         geometry: {
-          type: 'LineString',
+          type: 'LineString' as const,
           coordinates: lineCoords,
         },
       };
 
-      if (map.getSource(sourceId)) {
-        (map.getSource(sourceId) as maplibreGl.GeoJSONSource).setData(geojson);
-      } else if (lineCoords.length > 0) {
+      if (typeof map.getSource === 'function' && map.getSource(sourceId)) {
+        const source = map.getSource(sourceId) as { setData?: (data: unknown) => void };
+        if (source && typeof source.setData === 'function') {
+          source.setData(geojson);
+        }
+      } else if (lineCoords.length > 0 && typeof map.addSource === 'function') {
         map.addSource(sourceId, {
           type: 'geojson',
           data: geojson,
         });
-        map.addLayer({
-          id: layerId,
-          type: 'line',
-          source: sourceId,
-          layout: {
-            'line-join': 'round',
-            'line-cap': 'round',
-          },
-          paint: {
-            'line-color': '#d97706', // Terracotta amber
-            'line-width': 4,
-            'line-opacity': 0.85,
-            'line-dasharray': [2, 1],
-          },
-        });
+        if (typeof map.addLayer === 'function') {
+          map.addLayer({
+            id: layerId,
+            type: 'line',
+            source: sourceId,
+            layout: {
+              'line-join': 'round',
+              'line-cap': 'round',
+            },
+            paint: {
+              'line-color': '#d97706',
+              'line-width': 4,
+              'line-opacity': 0.85,
+              'line-dasharray': [2, 1],
+            },
+          });
+        }
       }
     };
 

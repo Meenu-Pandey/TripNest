@@ -280,7 +280,7 @@ describe('TripExpensesPage', () => {
     const amountInput = screen.getByLabelText(/Amount \(EUR\) \*/i);
     fireEvent.change(amountInput, { target: { value: '60.00' } });
 
-    fireEvent.click(screen.getByRole('button', { name: /Save Expense/i }));
+    fireEvent.click(screen.getAllByRole('button', { name: /Add Expense/i })[1]!);
 
     await waitFor(() => {
       expect(expensesService.createExpense).toHaveBeenCalledWith(
@@ -318,7 +318,7 @@ describe('TripExpensesPage', () => {
       expect(screen.getByText('Chalet Rental')).toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getByRole('button', { name: /Add Expense/i }));
+    fireEvent.click(screen.getAllByRole('button', { name: /Add Expense/i })[0]!);
 
     const descInput = screen.getByPlaceholderText(/Dinner at Trattoria/i);
     fireEvent.change(descInput, { target: { value: 'Grocery Run' } });
@@ -341,7 +341,7 @@ describe('TripExpensesPage', () => {
 
     expect(screen.getByText(/Exact match/i)).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: /Save Expense/i }));
+    fireEvent.click(screen.getAllByRole('button', { name: /Add Expense/i })[1]!);
 
     await waitFor(() => {
       expect(expensesService.createExpense).toHaveBeenCalledWith(
@@ -371,7 +371,7 @@ describe('TripExpensesPage', () => {
       expect(screen.getByText('Chalet Rental')).toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getByRole('button', { name: /Add Expense/i }));
+    fireEvent.click(screen.getAllByRole('button', { name: /Add Expense/i })[0]!);
 
     const descInput = screen.getByPlaceholderText(/Dinner at Trattoria/i);
     fireEvent.change(descInput, { target: { value: 'Ski Rental' } });
@@ -385,7 +385,7 @@ describe('TripExpensesPage', () => {
     // Only allocate 50.00 out of 100.00
     fireEvent.change(exactInputs[1]!, { target: { value: '50.00' } });
 
-    fireEvent.click(screen.getByRole('button', { name: /Save Expense/i }));
+    fireEvent.click(screen.getAllByRole('button', { name: /Add Expense/i })[1]!);
 
     await waitFor(() => {
       expect(
@@ -414,7 +414,7 @@ describe('TripExpensesPage', () => {
       expect(screen.getByText('Chalet Rental')).toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getByRole('button', { name: /Add Expense/i }));
+    fireEvent.click(screen.getAllByRole('button', { name: /Add Expense/i })[0]!);
 
     const descInput = screen.getByPlaceholderText(/Dinner at Trattoria/i);
     fireEvent.change(descInput, { target: { value: 'Fondue Dinner' } });
@@ -432,7 +432,7 @@ describe('TripExpensesPage', () => {
 
     expect(screen.getByText(/100\.00% assigned/i)).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: /Save Expense/i }));
+    fireEvent.click(screen.getAllByRole('button', { name: /Add Expense/i })[1]!);
 
     await waitFor(() => {
       expect(expensesService.createExpense).toHaveBeenCalledWith(
@@ -463,7 +463,7 @@ describe('TripExpensesPage', () => {
       expect(screen.getByText('Chalet Rental')).toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getByRole('button', { name: /Add Expense/i }));
+    fireEvent.click(screen.getAllByRole('button', { name: /Add Expense/i })[0]!);
 
     const descInput = screen.getByPlaceholderText(/Dinner at Trattoria/i);
     fireEvent.change(descInput, { target: { value: 'Fondue Dinner' } });
@@ -478,7 +478,7 @@ describe('TripExpensesPage', () => {
     fireEvent.change(pctInputs[0]!, { target: { value: '50.00' } });
     fireEvent.change(pctInputs[1]!, { target: { value: '20.00' } });
 
-    fireEvent.click(screen.getByRole('button', { name: /Save Expense/i }));
+    fireEvent.click(screen.getAllByRole('button', { name: /Add Expense/i })[1]!);
 
     await waitFor(() => {
       expect(
@@ -507,7 +507,7 @@ describe('TripExpensesPage', () => {
       expect(screen.getByText('Chalet Rental')).toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getByRole('button', { name: /Add Expense/i }));
+    fireEvent.click(screen.getAllByRole('button', { name: /Add Expense/i })[0]!);
 
     const descInput = screen.getByPlaceholderText(/Dinner at Trattoria/i);
     fireEvent.change(descInput, { target: { value: 'Van Rental' } });
@@ -523,7 +523,7 @@ describe('TripExpensesPage', () => {
     fireEvent.change(shareInputs[1]!, { target: { value: '1' } });
     fireEvent.change(shareInputs[2]!, { target: { value: '1' } });
 
-    fireEvent.click(screen.getByRole('button', { name: /Save Expense/i }));
+    fireEvent.click(screen.getAllByRole('button', { name: /Add Expense/i })[1]!);
 
     await waitFor(() => {
       expect(expensesService.createExpense).toHaveBeenCalledWith(

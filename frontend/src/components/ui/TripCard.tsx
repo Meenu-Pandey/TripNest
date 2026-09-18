@@ -7,18 +7,21 @@ import { formatMoney } from '@/lib/money';
 import type { Trip } from '@/types/trips';
 import { cn } from '@/lib/utils';
 
+import { getEffectiveTripStatus } from '@/lib/utils/tripStatus';
+
 export interface TripCardProps {
   trip: Trip;
   className?: string;
 }
 
 export function TripCard({ trip, className }: TripCardProps) {
+  const status = getEffectiveTripStatus(trip);
   const statusVariant = {
     PLANNING: 'terracotta' as const,
     ACTIVE: 'forest' as const,
     COMPLETED: 'default' as const,
     CANCELLED: 'danger' as const,
-  }[trip.status] || ('default' as const);
+  }[status] || ('default' as const);
 
   return (
     <Link to={`/trips/${trip.id}`} className={cn('group block', className)}>
@@ -36,7 +39,7 @@ export function TripCard({ trip, className }: TripCardProps) {
           {/* Floating Status and Role Pills */}
           <div className="absolute top-3 right-3 z-30 flex items-center gap-1.5">
             <Badge variant={statusVariant} className="text-[11px] shadow-sm font-semibold capitalize backdrop-blur-md">
-              {trip.status.toLowerCase()}
+              {status.toLowerCase()}
             </Badge>
             <Badge variant="outline" className="text-[10px] bg-white/90 text-sand-700 backdrop-blur-md capitalize">
               {trip.role.toLowerCase()}
