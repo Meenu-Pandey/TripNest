@@ -31,7 +31,7 @@ export function AppLayout() {
   }, []);
 
   const handleLogout = () => {
-    queryClient.removeQueries({ queryKey: ['notifications'] });
+    queryClient.clear();
     logout();
     navigate('/login');
   };

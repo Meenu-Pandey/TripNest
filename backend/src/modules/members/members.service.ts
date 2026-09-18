@@ -237,8 +237,14 @@ export async function getInviteDetails(rawToken: string): Promise<InviteDetailsD
 export async function listInvites(tripId: string, requesterId: string): Promise<InviteDTO[]> {
   await requireTripOwner(tripId, requesterId);
 
+  const now = new Date();
+  await prisma.tripInvite.updateMany({
+    where: { tripId, status: 'PENDING', expiresAt: { lt: now } },
+    data: { status: 'EXPIRED' },
+  });
+
   const invites = await prisma.tripInvite.findMany({
-    where: { tripId },
+    where: { tripId, status: 'PENDING' },
     orderBy: { createdAt: 'desc' },
   });
   return invites.map(toInviteDTO);

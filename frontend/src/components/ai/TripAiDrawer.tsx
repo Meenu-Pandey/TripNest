@@ -13,7 +13,6 @@ import {
   AlertCircle,
   MapPin,
   Clock,
-  Plus,
   Send,
   Terminal,
   Info,
@@ -605,15 +604,34 @@ export function TripAiDrawer({ trip }: TripAiDrawerProps) {
                             </div>
 
                             {!isViewer ? (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleApplyStop(stop)}
-                                className="text-xs self-end sm:self-center shrink-0 hover:bg-terracotta-50 hover:text-terracotta-900 hover:border-terracotta-300 font-medium"
-                                leftIcon={<Plus className="h-3.5 w-3.5 text-terracotta-600" />}
-                              >
-                                Apply to Itinerary
-                              </Button>
+                              <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+                                <Button
+                                  size="sm"
+                                  variant="primary"
+                                  onClick={() => handleApplyStop(stop)}
+                                  className="text-xs bg-terracotta-600 hover:bg-terracotta-700 text-white"
+                                  leftIcon={<Check className="h-3.5 w-3.5" />}
+                                >
+                                  Accept & Add
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    setLastResponse((prev) =>
+                                      prev
+                                        ? {
+                                            ...prev,
+                                            planStops: prev.planStops?.filter((_, i) => i !== index),
+                                          }
+                                        : null,
+                                    );
+                                  }}
+                                  className="text-xs text-sand-600 hover:text-rose-700 hover:border-rose-200"
+                                >
+                                  Reject
+                                </Button>
+                              </div>
                             ) : (
                               <span className="text-[11px] text-sand-400 italic">
                                 Viewers cannot edit

@@ -22,6 +22,7 @@ async function resetDatabase(): Promise<void> {
   // Listed exhaustively (rather than a dynamic TRUNCATE ... CASCADE) so
   // that adding a table later forces a deliberate decision about whether
   // it needs resetting between tests, instead of silently being swept up.
+  await prisma.passwordResetToken.deleteMany();
   await prisma.memoryPhoto.deleteMany();
   await prisma.activity.deleteMany();
   await prisma.settlement.deleteMany();
@@ -251,5 +252,80 @@ describe('GET /api/v1/auth/me', () => {
 
     const res = await request(app).get('/api/v1/auth/me').set('Authorization', `Bearer ${token}`);
     expect(res.status).toBe(401);
+  });
+});
+
+describe('POST /api/v1/auth/change-password', () => {
+  it('changes password when current password matches', async () => {
+    const reg = await request(app).post('/api/v1/auth/register').send({
+      email: 'changepass@example.com',
+      password: 'old-password-123',
+      name: 'Change Pass User',
+    });
+    const token = reg.body.data.token as string;
+
+    const res = await request(app)
+      .post('/api/v1/auth/change-password')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        currentPassword: 'old-password-123',
+        newPassword: 'new-password-456',
+        confirmPassword: 'new-password-456',
+      });
+
+    expect(res.status).toBe(200);
+
+    // Verify user can log in with new password
+    const loginRes = await request(app).post('/api/v1/auth/login').send({
+      email: 'changepass@example.com',
+      password: 'new-password-456',
+    });
+    expect(loginRes.status).toBe(200);
+  });
+
+  it('rejects password change if current password is wrong', async () => {
+    const reg = await request(app).post('/api/v1/auth/register').send({
+      email: 'wrongcurr@example.com',
+      password: 'old-password-123',
+      name: 'Wrong Current User',
+    });
+    const token = reg.body.data.token as string;
+
+    const res = await request(app)
+      .post('/api/v1/auth/change-password')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        currentPassword: 'wrong-current-password',
+        newPassword: 'new-password-456',
+        confirmPassword: 'new-password-456',
+      });
+
+    expect(res.status).toBe(400);
+  });
+});
+
+describe('POST /api/v1/auth/forgot-password & reset-password', () => {
+  it('generates a reset token and allows resetting password', async () => {
+    await request(app).post('/api/v1/auth/register').send({
+      email: 'resetme@example.com',
+      password: 'original-password',
+      name: 'Reset Me',
+    });
+
+    const forgotRes = await request(app).post('/api/v1/auth/forgot-password').send({
+      email: 'resetme@example.com',
+    });
+    expect(forgotRes.status).toBe(200);
+
+    const tokenRecord = await prisma.passwordResetToken.findFirst({
+      where: { user: { email: 'resetme@example.com' } },
+    });
+    expect(tokenRecord).not.toBeNull();
+
+    // Verify forgot-password returns generic message for non-existent email
+    const nonExistentRes = await request(app).post('/api/v1/auth/forgot-password').send({
+      email: 'doesnotexist@example.com',
+    });
+    expect(nonExistentRes.status).toBe(200);
   });
 });

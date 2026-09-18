@@ -5,31 +5,35 @@ import { toMoneyDTO } from '@/lib/money';
 import type { SupportedCurrency } from '@/lib/currency';
 import type { SettlementDTO } from './balances.service';
 
-function formatSettlement(s: any, currency: SupportedCurrency): SettlementDTO {
+function formatSettlement(s: Record<string, unknown>, currency: SupportedCurrency): SettlementDTO {
+  const fromMember = s.fromMember as { id: string; user: { id: string; name: string; upiId?: string | null } };
+  const toMember = s.toMember as { id: string; user: { id: string; name: string; upiId?: string | null } };
+  const attestations = (s.attestations as Array<{ witness: { user: { id: string; name: string } }; createdAt: Date }>) || [];
+
   return {
-    id: s.id,
+    id: s.id as string,
     from: {
-      userId: s.fromMember.user.id,
-      tripMemberId: s.fromMember.id,
-      name: s.fromMember.user.name,
-      upiId: s.fromMember.user.upiId,
+      userId: fromMember.user.id,
+      tripMemberId: fromMember.id,
+      name: fromMember.user.name,
+      upiId: fromMember.user.upiId,
     },
     to: {
-      userId: s.toMember.user.id,
-      tripMemberId: s.toMember.id,
-      name: s.toMember.user.name,
-      upiId: s.toMember.user.upiId,
+      userId: toMember.user.id,
+      tripMemberId: toMember.id,
+      name: toMember.user.name,
+      upiId: toMember.user.upiId,
     },
-    amount: toMoneyDTO(s.amount, currency),
-    status: s.status,
-    paymentMethod: s.paymentMethod,
-    payerMarkedPaidAt: s.payerMarkedPaidAt ? s.payerMarkedPaidAt.toISOString() : null,
-    recipientConfirmedAt: s.recipientConfirmedAt ? s.recipientConfirmedAt.toISOString() : null,
-    disputedAt: s.disputedAt ? s.disputedAt.toISOString() : null,
-    disputeReason: s.disputeReason,
-    notes: s.notes,
-    expenseId: s.expenseId,
-    attestations: (s.attestations || []).map((a: any) => ({
+    amount: toMoneyDTO(s.amount as bigint, currency),
+    status: s.status as SettlementDTO['status'],
+    paymentMethod: (s.paymentMethod as SettlementDTO['paymentMethod']) || null,
+    payerMarkedPaidAt: s.payerMarkedPaidAt ? (s.payerMarkedPaidAt as Date).toISOString() : null,
+    recipientConfirmedAt: s.recipientConfirmedAt ? (s.recipientConfirmedAt as Date).toISOString() : null,
+    disputedAt: s.disputedAt ? (s.disputedAt as Date).toISOString() : null,
+    disputeReason: (s.disputeReason as string) || null,
+    notes: (s.notes as string) || null,
+    expenseId: (s.expenseId as string) || null,
+    attestations: attestations.map((a) => ({
       witnessUserId: a.witness.user.id,
       witnessName: a.witness.user.name,
       createdAt: a.createdAt.toISOString(),
@@ -265,7 +269,7 @@ export async function attestSettlement(
     });
 
     let expenseId = settlement.expenseId;
-    let newStatus: 'PAYER_MARKED_PAID' | 'PAID' = settlement.status as any;
+    let newStatus: 'PAYER_MARKED_PAID' | 'PAID' = settlement.status as 'PAYER_MARKED_PAID' | 'PAID';
 
     // Quorum Rule: 2 independent witnesses automatically finalize cash payment if recipient hasn't confirmed yet
     if (attestationCount >= 2 && settlement.status !== 'PAID' && !settlement.expenseId) {

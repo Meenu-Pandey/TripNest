@@ -113,7 +113,8 @@ model User {
   sentInvites     TripInvite[]   @relation("InviteSender")
   activityEntries Activity[]
   notifications   Notification[]
-  idempotencyKeys IdempotencyKey[]
+  idempotencyKeys     IdempotencyKey[]
+  passwordResetTokens PasswordResetToken[]
 }
 
 // ---------------------------------------------------------------------------
@@ -505,4 +506,21 @@ model MemoryPhoto {
 
   @@index([tripId])
   @@index([uploadedById])
+}
+
+// ---------------------------------------------------------------------------
+// PasswordResetToken — secure tokens for self-service password recovery.
+// ---------------------------------------------------------------------------
+
+model PasswordResetToken {
+  id        String    @id @default(uuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }

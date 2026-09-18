@@ -74,11 +74,15 @@ const mockBalances: BalanceDTO[] = [
 
 const mockSettlements: SettlementDTO[] = [
   {
+    id: 'set-1',
+    status: 'SUGGESTED',
     from: { userId: 'user-bob-2', name: 'Bob Adventurer' },
     to: { userId: 'user-alice-1', name: 'Alice Explorer' },
     amount: { amountMinor: '10000', currency: 'EUR' },
   },
   {
+    id: 'set-2',
+    status: 'SUGGESTED',
     from: { userId: 'user-charlie-3', name: 'Charlie Hiker' },
     to: { userId: 'user-alice-1', name: 'Alice Explorer' },
     amount: { amountMinor: '5000', currency: 'EUR' },
@@ -235,7 +239,7 @@ describe('TripBalancesPage', () => {
     renderWithProviders(<TripBalancesPage />);
 
     // Wait until the initial query completes and the button returns to "Refresh Balances"
-    const refreshBtn = await screen.findByRole('button', { name: /Refresh Balances/i });
+    const refreshBtn = await screen.findByRole('button', { name: /^Refresh$/i });
     expect(refreshBtn).toBeInTheDocument();
 
     fireEvent.click(refreshBtn);

@@ -8,6 +8,8 @@ import { ProtectedRoute } from '@/features/auth/ProtectedRoute';
 import { LandingPage } from '@/pages/public/LandingPage';
 import { LoginPage } from '@/pages/public/LoginPage';
 import { RegisterPage } from '@/pages/public/RegisterPage';
+import { ForgotPasswordPage } from '@/pages/public/ForgotPasswordPage';
+import { ResetPasswordPage } from '@/pages/public/ResetPasswordPage';
 import { InviteLandingPage } from '@/pages/invitations/InviteLandingPage';
 
 // Authenticated general pages
@@ -40,6 +42,8 @@ export const router = createBrowserRouter([
       { index: true, element: <LandingPage /> },
       { path: 'login', element: <LoginPage /> },
       { path: 'register', element: <RegisterPage /> },
+      { path: 'forgot-password', element: <ForgotPasswordPage /> },
+      { path: 'reset-password', element: <ResetPasswordPage /> },
       { path: 'invite', element: <InviteLandingPage /> },
     ],
   },

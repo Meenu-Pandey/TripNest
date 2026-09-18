@@ -102,15 +102,25 @@ export function LoginPage() {
                 {...register('email')}
               />
 
-              <Input
-                label="Password"
-                type="password"
-                placeholder="••••••••"
-                leftIcon={<Lock className="h-4 w-4 text-sand-400" />}
-                error={errors.password?.message}
-                className="h-11 bg-white border-sand-200 focus:border-terracotta-400 focus:ring-terracotta-400/20 text-[14px]"
-                {...register('password')}
-              />
+              <div className="space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-mono tracking-widest uppercase text-sand-500">Password</span>
+                  <Link
+                    to="/forgot-password"
+                    className="text-xs text-terracotta-600 hover:text-terracotta-700 font-medium"
+                  >
+                    Forgot password?
+                  </Link>
+                </div>
+                <Input
+                  type="password"
+                  placeholder="••••••••"
+                  leftIcon={<Lock className="h-4 w-4 text-sand-400" />}
+                  error={errors.password?.message}
+                  className="h-11 bg-white border-sand-200 focus:border-terracotta-400 focus:ring-terracotta-400/20 text-[14px]"
+                  {...register('password')}
+                />
+              </div>
 
               <Button
                 type="submit"

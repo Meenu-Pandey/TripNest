@@ -9,7 +9,7 @@ export interface RoutingResult {
   available: boolean;
   distanceKm?: number;
   durationMinutes?: number;
-  geometry?: any;
+  geometry?: unknown;
   reason?: string;
 }
 
@@ -66,7 +66,17 @@ export async function getDrivingRoute(
       };
     }
 
-    const data = (await response.json()) as any;
+    interface OsrmResponse {
+      code?: string;
+      message?: string;
+      routes?: Array<{
+        distance?: number;
+        duration?: number;
+        geometry?: unknown;
+      }>;
+    }
+
+    const data = (await response.json()) as OsrmResponse;
     if (data.code !== 'Ok' || !data.routes || data.routes.length === 0) {
       return {
         available: false,
@@ -75,6 +85,13 @@ export async function getDrivingRoute(
     }
 
     const primaryRoute = data.routes[0];
+    if (!primaryRoute) {
+      return {
+        available: false,
+        reason: 'No driving route found between coordinates',
+      };
+    }
+
     const distanceMeters = primaryRoute.distance ?? 0;
     const durationSeconds = primaryRoute.duration ?? 0;
 

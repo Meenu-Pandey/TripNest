@@ -202,7 +202,7 @@ describe('TripAiDrawer', () => {
       screen.getByText('Morning visit to Fort Aguada'),
     ).toBeInTheDocument();
     expect(screen.getByText('09:30')).toBeInTheDocument();
-    expect(screen.getByText('Apply to Itinerary')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Accept & Add/i })).toBeInTheDocument();
   });
 
   it('opens modal and commits itinerary item on explicit user confirmation (Amendment 5: No Silent DB Mutations)', async () => {
@@ -259,14 +259,14 @@ describe('TripAiDrawer', () => {
     fireEvent.click(screen.getByRole('button', { name: /generate plan/i }));
 
     await waitFor(() => {
-      expect(screen.getByText('Apply to Itinerary')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /Accept & Add/i })).toBeInTheDocument();
     });
 
     // Verify DB has not been called yet (Zero silent mutations!)
     expect(itineraryService.createItineraryItem).not.toHaveBeenCalled();
 
-    // Click Apply to Itinerary -> opens modal
-    fireEvent.click(screen.getByText('Apply to Itinerary'));
+    // Click Accept & Add -> opens modal
+    fireEvent.click(screen.getByRole('button', { name: /Accept & Add/i }));
 
     await waitFor(() => {
       expect(screen.getByText('Add Proposed Stop to Itinerary')).toBeInTheDocument();
@@ -333,6 +333,6 @@ describe('TripAiDrawer', () => {
       expect(screen.getByText('Viewers cannot edit')).toBeInTheDocument();
     });
 
-    expect(screen.queryByText('Apply to Itinerary')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Accept & Add/i })).not.toBeInTheDocument();
   });
 });

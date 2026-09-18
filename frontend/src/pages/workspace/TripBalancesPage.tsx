@@ -29,7 +29,6 @@ import { PaymentSettlementModal } from '@/components/expenses/PaymentSettlementM
 import { UserProfileModal } from '@/components/users/UserProfileModal';
 import type { Trip } from '@/types/trips';
 import type { BalanceDTO, SettlementDTO } from '@/types/expenses';
-import type { PublicUser } from '@/types/users';
 
 export function TripBalancesPage() {
   const { trip } = useOutletContext<{ trip: Trip }>();
