@@ -7,13 +7,27 @@ import { z } from 'zod';
  * and let a missing/malformed variable fail late, deep in a request, with
  * a confusing error. Failing loudly at boot is much easier to debug.
  */
+const emptyStringToUndefined = (val: unknown) => (val === '' ? undefined : val);
+
 export const envSchema = z.object({
-  NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
-  PORT: z.coerce.number().int().positive().default(4000),
+  NODE_ENV: z.preprocess(
+    emptyStringToUndefined,
+    z.enum(['development', 'test', 'production']).default('development'),
+  ),
+  PORT: z.preprocess(
+    emptyStringToUndefined,
+    z.coerce.number().int().positive().default(4000),
+  ),
   DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
   JWT_SECRET: z.string().min(32, 'JWT_SECRET must be at least 32 characters long'),
-  JWT_EXPIRES_IN: z.string().min(1).default('1h'),
-  CORS_ORIGIN: z.string().min(1).default('http://localhost:3000'),
+  JWT_EXPIRES_IN: z.preprocess(
+    emptyStringToUndefined,
+    z.string().min(1).default('1h'),
+  ),
+  CORS_ORIGIN: z.preprocess(
+    emptyStringToUndefined,
+    z.string().min(1).default('http://localhost:3000'),
+  ),
   // Optional — used as the contact identifier in Nominatim's required
   // User-Agent header (see providers/geocoding/nominatimProvider.ts).
   // Not required for the app to start; falls back to a generic string.
@@ -29,22 +43,43 @@ export const envSchema = z.object({
     .pipe(z.string().email().optional())
     .optional(),
   // Local-disk storage backend directory (see src/lib/storage/localDiskStorage.ts).
-  UPLOADS_DIR: z.string().min(1).default('./uploads'),
+  UPLOADS_DIR: z.preprocess(
+    emptyStringToUndefined,
+    z.string().min(1).default('./uploads'),
+  ),
   // Local AI (Ollama) configuration
-  OLLAMA_BASE_URL: z.string().url().default('http://localhost:11434'),
-  OLLAMA_MODEL: z.string().min(1).default('llama3.2'),
+  OLLAMA_BASE_URL: z.preprocess(
+    emptyStringToUndefined,
+    z.string().url().default('http://localhost:11434'),
+  ),
+  OLLAMA_MODEL: z.preprocess(
+    emptyStringToUndefined,
+    z.string().min(1).default('llama3.2'),
+  ),
   // Application URL for invitation links
-  APP_URL: z.string().url().default('http://localhost:3000'),
+  APP_URL: z.preprocess(
+    emptyStringToUndefined,
+    z.string().url().default('http://localhost:3000'),
+  ),
   // Email Service configuration
-  EMAIL_PROVIDER: z.enum(['console', 'smtp', 'test']).default('console'),
-  SMTP_HOST: z.string().optional(),
-  SMTP_PORT: z.coerce.number().int().positive().default(587),
+  EMAIL_PROVIDER: z.preprocess(
+    emptyStringToUndefined,
+    z.enum(['console', 'smtp', 'test']).default('console'),
+  ),
+  SMTP_HOST: z.preprocess(emptyStringToUndefined, z.string().optional()),
+  SMTP_PORT: z.preprocess(
+    emptyStringToUndefined,
+    z.coerce.number().int().positive().default(587),
+  ),
   SMTP_SECURE: z.preprocess((val) => val === 'true' || val === true, z.boolean()).default(false),
-  SMTP_USER: z.string().optional(),
-  SMTP_PASSWORD: z.string().optional(),
-  SMTP_PASS: z.string().optional(),
-  EMAIL_FROM: z.string().default('TripNest <invites@tripnest.local>'),
-  SMTP_FROM: z.string().optional(),
+  SMTP_USER: z.preprocess(emptyStringToUndefined, z.string().optional()),
+  SMTP_PASSWORD: z.preprocess(emptyStringToUndefined, z.string().optional()),
+  SMTP_PASS: z.preprocess(emptyStringToUndefined, z.string().optional()),
+  EMAIL_FROM: z.preprocess(
+    emptyStringToUndefined,
+    z.string().default('TripNest <invites@tripnest.local>'),
+  ),
+  SMTP_FROM: z.preprocess(emptyStringToUndefined, z.string().optional()),
 });
 
 export type Env = z.infer<typeof envSchema>;
