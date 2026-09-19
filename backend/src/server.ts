@@ -5,13 +5,23 @@ import { logger } from '@/lib/logger';
 import { prisma } from '@/lib/prisma';
 import { initSocketServer } from '@/realtime/socket';
 
+const rootDir = process.cwd();
+
 if (env.NODE_ENV === 'production') {
   try {
-    logger.info('Executing production database migrations (prisma migrate deploy)...');
-    execSync('npx prisma migrate deploy', { stdio: 'inherit' });
-    logger.info('Production database migrations completed successfully.');
-  } catch (err) {
-    logger.error({ err }, 'Failed to execute production database migrations during startup');
+    logger.info({ rootDir }, 'Executing production database migrations (prisma migrate deploy)...');
+    const output = execSync('npx prisma migrate deploy', { cwd: rootDir, encoding: 'utf8' });
+    logger.info({ output }, 'Production database migrations completed successfully.');
+  } catch (err: unknown) {
+    const e = err as { message?: string; stdout?: Buffer | string; stderr?: Buffer | string };
+    logger.error(
+      {
+        message: e?.message,
+        stdout: e?.stdout?.toString(),
+        stderr: e?.stderr?.toString(),
+      },
+      'Failed to execute production database migrations during startup',
+    );
   }
 }
 

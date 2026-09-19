@@ -81,6 +81,24 @@ export function createApp(): Express {
       );
   });
 
+  app.get('/api/v1/diagnostic', async (_req, res) => {
+    const diag: Record<string, unknown> = {};
+    try {
+      const userCount = await prisma.user.count();
+      diag.dbUserTable = `OK (count: ${userCount})`;
+    } catch (err) {
+      diag.dbUserTable = `FAILED: ${err instanceof Error ? err.message : String(err)}`;
+    }
+    try {
+      const { hashPassword } = await import('@/lib/password');
+      const h = await hashPassword('testpassword123');
+      diag.argon2Status = `OK (hash length: ${h.length})`;
+    } catch (err) {
+      diag.argon2Status = `FAILED: ${err instanceof Error ? err.message : String(err)}`;
+    }
+    res.status(200).json({ success: true, data: diag });
+  });
+
   // Serves files written by LocalDiskStorage (src/lib/storage/) — see
   // docs/media-storage.md for why this is the right call for local/dev
   // use and what changes for a real production deployment.
