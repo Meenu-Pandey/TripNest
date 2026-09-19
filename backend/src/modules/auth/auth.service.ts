@@ -15,22 +15,14 @@ export interface AuthResult {
 const UNIQUE_CONSTRAINT_VIOLATION = 'P2002';
 
 export async function register(input: RegisterInput): Promise<AuthResult> {
-  // A findUnique-then-create pre-check is a UX nicety (a fast, friendly
-  // error for the common case) but is NOT sufficient on its own: under
-  // concurrent requests with the same email, both could pass this check
-  // before either insert lands. The database's unique constraint on
-  // User.email is the actual source of truth for this rule; the catch
-  // block below translates its violation into the same clean error the
-  // pre-check would have given, so the race condition still produces a
-  // correct 409, not a raw 500.
-  const existing = await prisma.user.findUnique({ where: { email: input.email } });
-  if (existing) {
-    throw new EmailAlreadyInUseError();
-  }
-
-  const passwordHash = await hashPassword(input.password);
-
   try {
+    const existing = await prisma.user.findUnique({ where: { email: input.email } });
+    if (existing) {
+      throw new EmailAlreadyInUseError();
+    }
+
+    const passwordHash = await hashPassword(input.password);
+
     const user = await prisma.user.create({
       data: {
         email: input.email,
@@ -48,6 +40,10 @@ export async function register(input: RegisterInput): Promise<AuthResult> {
     ) {
       throw new EmailAlreadyInUseError();
     }
+    if (err instanceof EmailAlreadyInUseError) {
+      throw err;
+    }
+    logger.error({ err, email: input.email }, 'Registration service error encountered');
     throw err;
   }
 }

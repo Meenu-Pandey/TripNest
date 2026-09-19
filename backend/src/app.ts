@@ -64,16 +64,21 @@ export function createApp(): Express {
   // Kubernetes-style readiness probe (traffic should route here) versus
   // liveness probe (should this process be restarted).
   app.get('/ready', (_req, res) => {
-    prisma.$queryRaw`SELECT 1`.then(
-      () => res.status(200).json({ success: true, data: { status: 'ready' } }),
-      (err: unknown) => {
-        logger.error({ err }, 'Readiness check failed: database unreachable');
-        res.status(503).json({
-          success: false,
-          error: { code: 'NOT_READY', message: 'Database unreachable' },
-        });
-      },
-    );
+    prisma.user
+      .count()
+      .then(
+        () => res.status(200).json({ success: true, data: { status: 'ready' } }),
+        (err: unknown) => {
+          logger.error({ err }, 'Readiness check failed: User table or database unreachable');
+          res.status(503).json({
+            success: false,
+            error: {
+              code: 'NOT_READY',
+              message: err instanceof Error ? err.message : 'Database schema unreachable',
+            },
+          });
+        },
+      );
   });
 
   // Serves files written by LocalDiskStorage (src/lib/storage/) — see
