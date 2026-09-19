@@ -71,6 +71,10 @@ export function createApp(): Express {
   );
   app.use(express.json({ limit: '1mb' }));
   app.use(requestId);
+  app.use('/api/v1', (_req, res, next) => {
+    res.setHeader('Cache-Control', 'private, no-cache');
+    next();
+  });
   app.use(
     pinoHttp({
       logger,

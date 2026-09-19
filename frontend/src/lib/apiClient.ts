@@ -23,6 +23,7 @@ export interface RequestOptions extends RequestInit {
 
 class ApiClient {
   private baseUrl: string;
+  private getCache = new Map<string, unknown>();
 
   constructor() {
     // If VITE_API_URL is set, use it; otherwise use empty string so requests hit the Vite proxy
@@ -53,8 +54,13 @@ class ApiClient {
     }
   }
 
+  public clearCache(): void {
+    this.getCache.clear();
+  }
+
   private async request<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
     const { idempotencyKey, skipAuth, headers: customHeaders, ...restOptions } = options;
+    const method = (restOptions.method || 'GET').toUpperCase();
 
     const headers = new Headers(customHeaders);
 
@@ -81,6 +87,12 @@ class ApiClient {
     }
 
     const url = endpoint.startsWith('http') ? endpoint : `${this.baseUrl}${endpoint}`;
+    const cacheKey = `${method}:${url}`;
+
+    // Clear cache on mutating operations
+    if (method !== 'GET') {
+      this.getCache.clear();
+    }
 
     let response: Response;
     try {
@@ -93,6 +105,14 @@ class ApiClient {
         code: 'NETWORK_ERROR',
         message: err instanceof Error ? err.message : 'Network connection failed',
       });
+    }
+
+    // Handle 304 Not Modified: Return cached response if available
+    if (response.status === 304) {
+      if (this.getCache.has(cacheKey)) {
+        return this.getCache.get(cacheKey) as T;
+      }
+      return undefined as unknown as T;
     }
 
     // Handle 204 No Content
@@ -131,11 +151,18 @@ class ApiClient {
 
     // Backend wraps all successful responses in { success: true, data: T }
     const successJson = json as Partial<ApiSuccessResponse<T>>;
+    let result: T;
     if (successJson && typeof successJson === 'object' && 'data' in successJson) {
-      return successJson.data as T;
+      result = successJson.data as T;
+    } else {
+      result = json as T;
     }
 
-    return json as T;
+    if (method === 'GET') {
+      this.getCache.set(cacheKey, result);
+    }
+
+    return result;
   }
 
   public get<T>(endpoint: string, options?: RequestOptions): Promise<T> {
