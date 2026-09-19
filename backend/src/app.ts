@@ -96,6 +96,30 @@ export function createApp(): Express {
     } catch (err) {
       diag.argon2Status = `FAILED: ${err instanceof Error ? err.message : String(err)}`;
     }
+    try {
+      const { signAccessToken } = await import('@/lib/jwt');
+      const token = signAccessToken({ sub: 'test-uuid-1234' });
+      diag.jwtStatus = `OK (token length: ${token.length})`;
+    } catch (err) {
+      diag.jwtStatus = `FAILED: ${err instanceof Error ? err.message : String(err)}`;
+    }
+    try {
+      const testEmail = `diag_${Date.now()}@tripnest.app`;
+      const { hashPassword } = await import('@/lib/password');
+      const pwHash = await hashPassword('testpassword123');
+      const created = await prisma.user.create({
+        data: {
+          email: testEmail,
+          name: 'Diag User',
+          passwordHash: pwHash,
+        },
+      });
+      diag.dbUserCreate = `OK (created id: ${created.id})`;
+      await prisma.user.delete({ where: { id: created.id } });
+      diag.dbUserDelete = 'OK (cleaned up)';
+    } catch (err) {
+      diag.dbUserCreate = `FAILED: ${err instanceof Error ? err.stack || err.message : String(err)}`;
+    }
     res.status(200).json({ success: true, data: diag });
   });
 
