@@ -46,8 +46,12 @@ function handleUpload(req: Request, res: Response, next: NextFunction): void {
       next(new ValidationError(err.message));
       return;
     }
-    if (err) {
+    if (err instanceof Error) {
       next(err);
+      return;
+    }
+    if (err) {
+      next(new Error(String(err)));
       return;
     }
     next();
