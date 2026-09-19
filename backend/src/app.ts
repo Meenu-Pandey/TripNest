@@ -33,6 +33,26 @@ import { aiStatusRouter, aiTripRouter } from '@/modules/ai/ai.routes';
 export function createApp(): Express {
   const app = express();
 
+  // Self-healing database schema alignment
+  prisma.$executeRawUnsafe(`
+    ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "upiId" TEXT;
+    ALTER TABLE "PasswordResetToken" ADD COLUMN IF NOT EXISTS "usedAt" TIMESTAMP(3);
+    ALTER TABLE "Settlement" ADD COLUMN IF NOT EXISTS "paymentMethod" TEXT;
+    ALTER TABLE "Settlement" ADD COLUMN IF NOT EXISTS "payerMarkedPaidAt" TIMESTAMP(3);
+    ALTER TABLE "Settlement" ADD COLUMN IF NOT EXISTS "recipientConfirmedAt" TIMESTAMP(3);
+    ALTER TABLE "Settlement" ADD COLUMN IF NOT EXISTS "disputedAt" TIMESTAMP(3);
+    ALTER TABLE "Settlement" ADD COLUMN IF NOT EXISTS "disputeReason" TEXT;
+    CREATE TABLE IF NOT EXISTS "SettlementAttestation" (
+        "id" TEXT NOT NULL,
+        "settlementId" TEXT NOT NULL,
+        "witnessId" TEXT NOT NULL,
+        "attestedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT "SettlementAttestation_pkey" PRIMARY KEY ("id")
+    );
+  `).catch((err: unknown) => {
+    logger.error({ err }, 'Schema self-healing execution failed');
+  });
+
   app.disable('x-powered-by');
   app.use(helmet());
   app.use(
