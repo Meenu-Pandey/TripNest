@@ -422,7 +422,7 @@ export function LandingPage() {
                   </div>
                   <span className="font-serif text-xl text-white">Trip AI Copilot</span>
                 </div>
-                <span className="text-[10px] font-mono bg-forest-950 text-emerald-400 border border-emerald-900/50 px-2 py-0.5 rounded-full">Ollama Local</span>
+                <span className="text-[10px] font-mono bg-forest-950 text-emerald-400 border border-emerald-900/50 px-2 py-0.5 rounded-full">AI Powered</span>
               </div>
               
               <div className="space-y-6">
@@ -460,7 +460,7 @@ export function LandingPage() {
               Your private<br />travel advisor.
             </h2>
             <p className="text-sand-300 text-base leading-relaxed max-w-md">
-              Connect to local Ollama inference. Generate tailored day plans and append structured proposals directly into your itinerary without sacrificing privacy.
+              AI-powered day planning generates tailored itinerary proposals and appends structured suggestions directly into your trip workspace.
             </p>
           </Reveal>
         </div>

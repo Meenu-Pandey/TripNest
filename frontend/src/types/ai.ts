@@ -7,7 +7,7 @@ export type AiAction =
 
 export type AiAvailabilityStatus =
   | 'READY'
-  | 'OLLAMA_UNAVAILABLE'
+  | 'AI_UNAVAILABLE'
   | 'MODEL_UNAVAILABLE';
 
 export interface AiStatusResponse {

@@ -5,7 +5,6 @@ import {
   Sparkles,
   X,
   RefreshCw,
-  Copy,
   Check,
   Calendar,
   Compass,
@@ -14,7 +13,6 @@ import {
   MapPin,
   Clock,
   Send,
-  Terminal,
   Info,
 } from 'lucide-react';
 import { useTripAi } from '@/context/TripAiContext';
@@ -45,7 +43,7 @@ export function TripAiDrawer({ trip }: TripAiDrawerProps) {
 
   const isViewer = trip.role === 'VIEWER';
 
-  // 1. Ollama Health & Status Query
+  // 1. AI Health & Status Query
   const {
     data: aiStatus,
     isLoading: isCheckingStatus,
@@ -61,7 +59,6 @@ export function TripAiDrawer({ trip }: TripAiDrawerProps) {
   const isAiReady = aiStatus?.status === 'READY';
 
   // Local state for interactive chat/generation
-  const [copiedCmd, setCopiedCmd] = useState(false);
   const [appliedStopMessage, setAppliedStopMessage] = useState<string | null>(null);
   const [selectedStopForModal, setSelectedStopForModal] = useState<ProposedItineraryStop | null>(null);
   const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
@@ -116,11 +113,7 @@ export function TripAiDrawer({ trip }: TripAiDrawerProps) {
     },
   });
 
-  const handleCopyCommand = (cmd: string) => {
-    navigator.clipboard.writeText(cmd);
-    setCopiedCmd(true);
-    setTimeout(() => setCopiedCmd(false), 2000);
-  };
+
 
   const handleActionSelect = (action: AiAction) => {
     setActiveAction(action);
@@ -187,7 +180,7 @@ export function TripAiDrawer({ trip }: TripAiDrawerProps) {
                         ? `Ready (${aiStatus?.defaultModel || 'llama3.2'})`
                         : aiStatus?.status === 'MODEL_UNAVAILABLE'
                         ? 'Model Missing'
-                        : 'Ollama Offline'}
+                        : 'AI Offline'}
                     </Badge>
                   </div>
                   <p className="text-xs text-sand-500 truncate max-w-[240px] sm:max-w-xs">
@@ -201,7 +194,7 @@ export function TripAiDrawer({ trip }: TripAiDrawerProps) {
                 <button
                   type="button"
                   onClick={() => refetchStatus()}
-                  title="Check Ollama connection"
+                  title="Check AI connection"
                   className="p-1.5 rounded-lg text-sand-500 hover:text-sand-900 hover:bg-sand-200/60 transition-colors"
                 >
                   <RefreshCw
@@ -224,70 +217,24 @@ export function TripAiDrawer({ trip }: TripAiDrawerProps) {
 
             {/* Scrollable Content Area */}
             <div className="flex-1 overflow-y-auto p-5 space-y-5">
-              {/* Ollama Offline / Setup Guide Card */}
+              {/* AI Unavailable / Setup Guide Card */}
               {!isAiReady && !isCheckingStatus && (
                 <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-4 space-y-3">
                   <div className="flex items-start gap-2.5">
-                    <Terminal className="h-5 w-5 text-amber-700 shrink-0 mt-0.5" />
+                    <AlertCircle className="h-5 w-5 text-amber-700 shrink-0 mt-0.5" />
                     <div className="space-y-1">
                       <h4 className="text-sm font-semibold text-amber-900">
                         {aiStatus?.status === 'MODEL_UNAVAILABLE'
-                          ? `Pull '${aiStatus?.defaultModel || 'llama3.2'}' to enable AI`
-                          : 'Local Ollama Assistant Setup'}
+                          ? `Model '${aiStatus?.defaultModel || 'default'}' is unavailable`
+                          : 'AI Assistant Unavailable'}
                       </h4>
                       <p className="text-xs text-amber-800 leading-relaxed">
-                        TripNest AI runs 100% locally on your machine for complete privacy. All regular
-                        TripNest features (itinerary, budget, places, map) remain fully operational.
+                        {aiStatus?.message || 'TripNest AI is temporarily unavailable. All other TripNest features (itinerary, budget, places, map) remain fully operational.'}
                       </p>
                     </div>
                   </div>
 
-                  <div className="space-y-2 pt-1">
-                    <p className="text-xs font-medium text-amber-900">
-                      Run this in your terminal:
-                    </p>
-                    <div className="flex items-center justify-between rounded-xl bg-sand-950 p-2.5 font-mono text-xs text-sand-100">
-                      <code>
-                        {aiStatus?.status === 'MODEL_UNAVAILABLE'
-                          ? `ollama pull ${aiStatus.defaultModel || 'llama3.2'}`
-                          : 'ollama run llama3.2'}
-                      </code>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          handleCopyCommand(
-                            aiStatus?.status === 'MODEL_UNAVAILABLE'
-                              ? `ollama pull ${aiStatus.defaultModel || 'llama3.2'}`
-                              : 'ollama run llama3.2',
-                          )
-                        }
-                        className="ml-2 inline-flex items-center gap-1 rounded bg-sand-800 px-2 py-1 text-[11px] text-sand-200 hover:bg-sand-700 transition-colors"
-                      >
-                        {copiedCmd ? (
-                          <>
-                            <Check className="h-3 w-3 text-emerald-400" /> Copied
-                          </>
-                        ) : (
-                          <>
-                            <Copy className="h-3 w-3" /> Copy
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="pt-2 flex items-center justify-between">
-                    <span className="text-[11px] text-amber-800">
-                      Need Ollama? Get it free at{' '}
-                      <a
-                        href="https://ollama.com"
-                        target="_blank"
-                        rel="noreferrer"
-                        className="underline font-medium hover:text-amber-950"
-                      >
-                        ollama.com
-                      </a>
-                    </span>
+                  <div className="pt-2 flex items-center justify-end">
                     <Button
                       size="sm"
                       variant="outline"
@@ -432,7 +379,7 @@ export function TripAiDrawer({ trip }: TripAiDrawerProps) {
                 <div className="flex items-center justify-between pt-1">
                   <div className="flex items-center gap-1.5 text-xs text-sand-500">
                     <Info className="h-3.5 w-3.5" />
-                    <span>Private & offline via Ollama</span>
+                    <span>Powered by TripNest AI</span>
                   </div>
                   <Button
                     type="submit"
@@ -499,7 +446,7 @@ export function TripAiDrawer({ trip }: TripAiDrawerProps) {
                       </div>
                       <p className="leading-relaxed text-amber-800">
                         {lastResponse.message ||
-                          'Local AI is temporarily unavailable. Please verify that Ollama is running.'}
+                          'AI service is temporarily unavailable. Please try again shortly.'}
                       </p>
                       <div className="pt-1 flex items-center gap-3">
                         <Button

@@ -73,13 +73,13 @@ describe('TripAiDrawer', () => {
     ]);
   });
 
-  it('renders offline setup guide when Ollama is unavailable', async () => {
+  it('renders unavailable guide when AI is unavailable', async () => {
     vi.mocked(aiService.getStatus).mockResolvedValue({
       available: false,
-      status: 'OLLAMA_UNAVAILABLE',
-      defaultModel: 'llama3.2',
+      status: 'AI_UNAVAILABLE',
+      defaultModel: 'openrouter/free',
       models: [],
-      message: 'Ollama is offline',
+      message: 'TripNest AI assistant is temporarily unavailable. Please try again shortly.',
     });
 
     renderWithProviders(
@@ -92,21 +92,20 @@ describe('TripAiDrawer', () => {
     fireEvent.click(screen.getByText('Open Drawer'));
 
     await waitFor(() => {
-      expect(screen.getByText('Local Ollama Assistant Setup')).toBeInTheDocument();
+      expect(screen.getByText('AI Assistant Unavailable')).toBeInTheDocument();
     });
 
-    expect(screen.getByText('ollama run llama3.2')).toBeInTheDocument();
     expect(screen.getByText('Check Connection')).toBeInTheDocument();
-    expect(screen.getByText('Ollama Offline')).toBeInTheDocument();
+    expect(screen.getByText('AI Offline')).toBeInTheDocument();
   });
 
-  it('refetches Ollama connection status on clicking Check Connection', async () => {
+  it('refetches AI connection status on clicking Check Connection', async () => {
     vi.mocked(aiService.getStatus).mockResolvedValue({
       available: false,
-      status: 'OLLAMA_UNAVAILABLE',
-      defaultModel: 'llama3.2',
+      status: 'AI_UNAVAILABLE',
+      defaultModel: 'openrouter/free',
       models: [],
-      message: 'Ollama is offline',
+      message: 'TripNest AI assistant is temporarily unavailable. Please try again shortly.',
     });
 
     renderWithProviders(
@@ -126,7 +125,7 @@ describe('TripAiDrawer', () => {
     expect(aiService.getStatus).toHaveBeenCalled();
   });
 
-  it('displays Ready status and planning actions when Ollama is available', async () => {
+  it('displays Ready status and planning actions when AI is available', async () => {
     vi.mocked(aiService.getStatus).mockResolvedValue({
       available: true,
       status: 'READY',

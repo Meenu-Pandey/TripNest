@@ -12,7 +12,7 @@ export interface ProposedItineraryStop {
   placeName: string | null;
 }
 
-export type AiAvailabilityStatus = 'READY' | 'OLLAMA_UNAVAILABLE' | 'MODEL_UNAVAILABLE';
+export type AiAvailabilityStatus = 'READY' | 'AI_UNAVAILABLE' | 'MODEL_UNAVAILABLE';
 
 export interface AiStatusResult {
   available: boolean;
@@ -47,15 +47,12 @@ export class AiService {
     const health = await this.provider.checkHealth();
 
     if (!health.available) {
-      const isHosted = env.AI_PROVIDER === 'openrouter';
       return {
         available: false,
-        status: 'OLLAMA_UNAVAILABLE',
+        status: 'AI_UNAVAILABLE',
         defaultModel: health.defaultModel,
         models: [],
-        message: isHosted
-          ? 'TripNest AI assistant is temporarily unavailable. Please check server OpenRouter key configuration.'
-          : 'TripNest AI runs locally via Ollama at http://localhost:11434. To enable private local AI, install Ollama from https://ollama.com and run `ollama run llama3.2`. Your normal TripNest features remain fully operational.',
+        message: 'TripNest AI assistant is temporarily unavailable. Please try again shortly.',
       };
     }
 
@@ -86,7 +83,7 @@ export class AiService {
     // 1. Gather sanitized trip context (enforces membership, IDOR protection, and date range)
     const { context, formattedContext } = await buildTripAiContext(tripId, requesterId, input.date);
 
-    // 2. Check Ollama availability and model status (Amendment 6: graceful fallback)
+    // 2. Check AI provider availability and model status (graceful fallback)
     const status = await this.getStatus();
     if (!status.available) {
       return {
@@ -100,7 +97,7 @@ export class AiService {
     // 3. Assemble action-specific prompt (Amendment 2: restrict chat strictly to current trip)
     const { systemPrompt, userPrompt } = this.buildPrompts(input, formattedContext);
 
-    // 4. Generate completion via local Ollama
+    // 4. Generate completion via AI provider
     try {
       const completion = await this.provider.generateCompletion(systemPrompt, userPrompt);
       const reply = completion.response.trim();
@@ -122,12 +119,12 @@ export class AiService {
     } catch (err) {
       return {
         available: false,
-        status: 'OLLAMA_UNAVAILABLE',
-        reason: 'OLLAMA_ERROR',
+        status: 'AI_UNAVAILABLE',
+        reason: 'AI_ERROR',
         message:
           err instanceof Error
-            ? `Local AI encountered an issue: ${err.message}`
-            : 'Local AI is temporarily unavailable.',
+            ? `AI service encountered an issue: ${err.message}`
+            : 'AI service is temporarily unavailable.',
       };
     }
   }
