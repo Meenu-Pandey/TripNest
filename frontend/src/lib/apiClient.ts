@@ -112,7 +112,26 @@ class ApiClient {
       if (this.getCache.has(cacheKey)) {
         return this.getCache.get(cacheKey) as T;
       }
-      return undefined as unknown as T;
+      // Uncached 304: perform safe re-fetch without conditional headers to obtain fresh data
+      const cleanHeaders = new Headers(headers);
+      cleanHeaders.delete('If-None-Match');
+      cleanHeaders.delete('If-Modified-Since');
+      const freshRes = await fetch(url, { ...restOptions, headers: cleanHeaders });
+      if (freshRes?.ok) {
+        const freshJson = await freshRes.json().catch(() => null);
+        const freshResult =
+          freshJson && typeof freshJson === 'object' && 'data' in freshJson
+            ? freshJson.data
+            : freshJson;
+        if (freshResult !== undefined && freshResult !== null) {
+          this.getCache.set(cacheKey, freshResult);
+          return freshResult as T;
+        }
+      }
+      throw new ApiClientError(304, {
+        code: 'NOT_MODIFIED',
+        message: 'Received 304 Not Modified but no cached representation was available.',
+      });
     }
 
     // Handle 204 No Content

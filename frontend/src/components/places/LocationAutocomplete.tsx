@@ -62,7 +62,7 @@ export function LocationAutocomplete({
       } finally {
         setIsLoading(false);
       }
-    }, 300);
+    }, 450);
 
     return () => clearTimeout(timer);
   }, [query]);

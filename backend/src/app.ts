@@ -33,34 +33,7 @@ import { aiStatusRouter, aiTripRouter } from '@/modules/ai/ai.routes';
 export function createApp(): Express {
   const app = express();
 
-  // Self-healing database schema alignment
-  prisma.$executeRawUnsafe(`
-    ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "upiId" TEXT;
-    CREATE TABLE IF NOT EXISTS "PasswordResetToken" (
-        "id" TEXT NOT NULL,
-        "userId" TEXT NOT NULL,
-        "tokenHash" TEXT NOT NULL,
-        "expiresAt" TIMESTAMP(3) NOT NULL,
-        "usedAt" TIMESTAMP(3),
-        "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        CONSTRAINT "PasswordResetToken_pkey" PRIMARY KEY ("id")
-    );
-    ALTER TABLE "PasswordResetToken" ADD COLUMN IF NOT EXISTS "usedAt" TIMESTAMP(3);
-    ALTER TABLE "Settlement" ADD COLUMN IF NOT EXISTS "paymentMethod" TEXT;
-    ALTER TABLE "Settlement" ADD COLUMN IF NOT EXISTS "payerMarkedPaidAt" TIMESTAMP(3);
-    ALTER TABLE "Settlement" ADD COLUMN IF NOT EXISTS "recipientConfirmedAt" TIMESTAMP(3);
-    ALTER TABLE "Settlement" ADD COLUMN IF NOT EXISTS "disputedAt" TIMESTAMP(3);
-    ALTER TABLE "Settlement" ADD COLUMN IF NOT EXISTS "disputeReason" TEXT;
-    CREATE TABLE IF NOT EXISTS "SettlementAttestation" (
-        "id" TEXT NOT NULL,
-        "settlementId" TEXT NOT NULL,
-        "witnessId" TEXT NOT NULL,
-        "attestedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        CONSTRAINT "SettlementAttestation_pkey" PRIMARY KEY ("id")
-    );
-  `).catch((err: unknown) => {
-    logger.error({ err }, 'Schema self-healing execution failed');
-  });
+
 
   app.disable('x-powered-by');
   app.use(helmet());
@@ -115,6 +88,11 @@ export function createApp(): Express {
   });
 
   app.get('/api/v1/diagnostic', async (_req, res) => {
+    if (env.NODE_ENV === 'production') {
+      res.status(403).json({ success: false, error: { code: 'FORBIDDEN', message: 'Diagnostic endpoint disabled in production' } });
+      return;
+    }
+
     const diag: Record<string, unknown> = {};
     try {
       const userCount = await prisma.user.count();
@@ -135,23 +113,6 @@ export function createApp(): Express {
       diag.jwtStatus = `OK (token length: ${token.length})`;
     } catch (err) {
       diag.jwtStatus = `FAILED: ${err instanceof Error ? err.message : String(err)}`;
-    }
-    try {
-      const testEmail = `diag_${Date.now()}@tripnest.app`;
-      const { hashPassword } = await import('@/lib/password');
-      const pwHash = await hashPassword('testpassword123');
-      const created = await prisma.user.create({
-        data: {
-          email: testEmail,
-          name: 'Diag User',
-          passwordHash: pwHash,
-        },
-      });
-      diag.dbUserCreate = `OK (created id: ${created.id})`;
-      await prisma.user.delete({ where: { id: created.id } });
-      diag.dbUserDelete = 'OK (cleaned up)';
-    } catch (err) {
-      diag.dbUserCreate = `FAILED: ${err instanceof Error ? err.stack || err.message : String(err)}`;
     }
     res.status(200).json({ success: true, data: diag });
   });

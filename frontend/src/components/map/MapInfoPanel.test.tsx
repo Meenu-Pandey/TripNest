@@ -164,9 +164,9 @@ describe('MapInfoPanel', () => {
       />,
     );
 
-    // Should display straight-line distance from preceding stop (Louvre)
+    // Should display direct line distance from preceding stop (Louvre)
     expect(screen.getByText(/Itinerary Context/i)).toBeInTheDocument();
-    expect(screen.getByText(/Straight-line distance from preceding stop/i)).toBeInTheDocument();
+    expect(screen.getByText(/Distance \(direct line\) from preceding stop/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Louvre Museum' })).toBeInTheDocument();
   });
 

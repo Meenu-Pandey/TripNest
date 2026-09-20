@@ -174,7 +174,7 @@ describe('TripMembersPage', () => {
       });
     });
 
-    expect(screen.getByText('Invitation Email Dispatched!')).toBeInTheDocument();
+    expect(screen.getByText('Invitation Created!')).toBeInTheDocument();
   });
 
   it('opens confirmation modal and revokes a pending invitation', async () => {

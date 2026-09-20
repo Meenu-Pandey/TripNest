@@ -47,6 +47,16 @@ export const envSchema = z.object({
     emptyStringToUndefined,
     z.string().min(1).default('./uploads'),
   ),
+  // AI Service configuration
+  AI_PROVIDER: z.preprocess(
+    emptyStringToUndefined,
+    z.enum(['ollama', 'openrouter']).default('ollama'),
+  ),
+  OPENROUTER_API_KEY: z.preprocess(emptyStringToUndefined, z.string().optional()),
+  AI_MODEL: z.preprocess(
+    emptyStringToUndefined,
+    z.string().default('openrouter/free'),
+  ),
   // Local AI (Ollama) configuration
   OLLAMA_BASE_URL: z.preprocess(
     emptyStringToUndefined,
@@ -56,6 +66,13 @@ export const envSchema = z.object({
     emptyStringToUndefined,
     z.string().min(1).default('llama3.2'),
   ),
+  // Storage Provider configuration
+  STORAGE_PROVIDER: z.preprocess(
+    emptyStringToUndefined,
+    z.enum(['local', 'supabase']).default('local'),
+  ),
+  SUPABASE_URL: z.preprocess(emptyStringToUndefined, z.string().optional()),
+  SUPABASE_SERVICE_ROLE_KEY: z.preprocess(emptyStringToUndefined, z.string().optional()),
   // Application URL for invitation links
   APP_URL: z.preprocess(
     emptyStringToUndefined,
@@ -64,8 +81,9 @@ export const envSchema = z.object({
   // Email Service configuration
   EMAIL_PROVIDER: z.preprocess(
     emptyStringToUndefined,
-    z.enum(['console', 'smtp', 'test']).default('console'),
+    z.enum(['console', 'smtp', 'resend', 'test']).default('console'),
   ),
+  RESEND_API_KEY: z.preprocess(emptyStringToUndefined, z.string().optional()),
   SMTP_HOST: z.preprocess(emptyStringToUndefined, z.string().optional()),
   SMTP_PORT: z.preprocess(
     emptyStringToUndefined,

@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react';
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { PublicLayout } from '@/layouts/PublicLayout';
 import { AppLayout } from '@/layouts/AppLayout';
@@ -18,20 +19,55 @@ import { NewTripPage } from '@/pages/trips/NewTripPage';
 import { ProfilePage } from '@/pages/profile/ProfilePage';
 import { NotificationsPage } from '@/pages/notifications/NotificationsPage';
 
-// Trip Workspace pages
-import { TripOverviewPage } from '@/pages/workspace/TripOverviewPage';
-import { TripItineraryPage } from '@/pages/workspace/TripItineraryPage';
-import { TripPlacesPage } from '@/pages/workspace/TripPlacesPage';
-import { TripExplorePage } from '@/pages/workspace/TripExplorePage';
-import { TripMapPage } from '@/pages/workspace/TripMapPage';
-import { TripExpensesPage } from '@/pages/workspace/TripExpensesPage';
-import { TripBalancesPage } from '@/pages/workspace/TripBalancesPage';
-import { TripBudgetPage } from '@/pages/workspace/TripBudgetPage';
-import { TripMembersPage } from '@/pages/workspace/TripMembersPage';
-import { TripMemoriesPage } from '@/pages/workspace/TripMemoriesPage';
+// Lazy-loaded Trip Workspace heavy pages
+const TripOverviewPage = lazy(() =>
+  import('@/pages/workspace/TripOverviewPage').then((m) => ({ default: m.TripOverviewPage })),
+);
+const TripItineraryPage = lazy(() =>
+  import('@/pages/workspace/TripItineraryPage').then((m) => ({ default: m.TripItineraryPage })),
+);
+const TripPlacesPage = lazy(() =>
+  import('@/pages/workspace/TripPlacesPage').then((m) => ({ default: m.TripPlacesPage })),
+);
+const TripExplorePage = lazy(() =>
+  import('@/pages/workspace/TripExplorePage').then((m) => ({ default: m.TripExplorePage })),
+);
+const TripMapPage = lazy(() =>
+  import('@/pages/workspace/TripMapPage').then((m) => ({ default: m.TripMapPage })),
+);
+const TripExpensesPage = lazy(() =>
+  import('@/pages/workspace/TripExpensesPage').then((m) => ({ default: m.TripExpensesPage })),
+);
+const TripBalancesPage = lazy(() =>
+  import('@/pages/workspace/TripBalancesPage').then((m) => ({ default: m.TripBalancesPage })),
+);
+const TripBudgetPage = lazy(() =>
+  import('@/pages/workspace/TripBudgetPage').then((m) => ({ default: m.TripBudgetPage })),
+);
+const TripMembersPage = lazy(() =>
+  import('@/pages/workspace/TripMembersPage').then((m) => ({ default: m.TripMembersPage })),
+);
+const TripMemoriesPage = lazy(() =>
+  import('@/pages/workspace/TripMemoriesPage').then((m) => ({ default: m.TripMemoriesPage })),
+);
 
 // 404
 import { NotFoundPage } from '@/pages/NotFoundPage';
+
+function PageFallback() {
+  return (
+    <div className="flex items-center justify-center p-12 min-h-[300px]">
+      <div className="flex flex-col items-center gap-2">
+        <div className="w-6 h-6 border-2 border-terracotta-600 border-t-transparent rounded-full animate-spin" />
+        <span className="text-xs text-sand-500 font-medium">Loading workspace module...</span>
+      </div>
+    </div>
+  );
+}
+
+function LazyRoute({ children }: { children: React.ReactNode }) {
+  return <Suspense fallback={<PageFallback />}>{children}</Suspense>;
+}
 
 export const router = createBrowserRouter([
   // Public routes wrapped in PublicLayout
@@ -66,16 +102,16 @@ export const router = createBrowserRouter([
             path: 'trips/:tripId',
             element: <TripWorkspaceLayout />,
             children: [
-              { index: true, element: <TripOverviewPage /> },
-              { path: 'itinerary', element: <TripItineraryPage /> },
-              { path: 'places', element: <TripPlacesPage /> },
-              { path: 'explore', element: <TripExplorePage /> },
-              { path: 'map', element: <TripMapPage /> },
-              { path: 'expenses', element: <TripExpensesPage /> },
-              { path: 'balances', element: <TripBalancesPage /> },
-              { path: 'budget', element: <TripBudgetPage /> },
-              { path: 'members', element: <TripMembersPage /> },
-              { path: 'memories', element: <TripMemoriesPage /> },
+              { index: true, element: <LazyRoute><TripOverviewPage /></LazyRoute> },
+              { path: 'itinerary', element: <LazyRoute><TripItineraryPage /></LazyRoute> },
+              { path: 'places', element: <LazyRoute><TripPlacesPage /></LazyRoute> },
+              { path: 'explore', element: <LazyRoute><TripExplorePage /></LazyRoute> },
+              { path: 'map', element: <LazyRoute><TripMapPage /></LazyRoute> },
+              { path: 'expenses', element: <LazyRoute><TripExpensesPage /></LazyRoute> },
+              { path: 'balances', element: <LazyRoute><TripBalancesPage /></LazyRoute> },
+              { path: 'budget', element: <LazyRoute><TripBudgetPage /></LazyRoute> },
+              { path: 'members', element: <LazyRoute><TripMembersPage /></LazyRoute> },
+              { path: 'memories', element: <LazyRoute><TripMemoriesPage /></LazyRoute> },
             ],
           },
         ],

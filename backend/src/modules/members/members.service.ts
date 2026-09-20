@@ -85,7 +85,7 @@ export async function createInvite(
   tripId: string,
   requesterId: string,
   input: CreateInviteInput,
-): Promise<{ invite: InviteDTO; token: string; inviteUrl: string }> {
+): Promise<{ invite: InviteDTO; token: string; inviteUrl: string; emailSent: boolean }> {
   await requireTripOwner(tripId, requesterId);
 
   const existingUser = await prisma.user.findUnique({ where: { email: input.email } });
@@ -98,11 +98,6 @@ export async function createInvite(
     }
   }
 
-  // Service-level pre-check for a clean, friendly error; the partial
-  // unique index on (tripId, email) WHERE status = 'PENDING' (see
-  // prisma/migrations/20260115000001_add_database_constraints/) is the actual backstop against a
-  // concurrent duplicate — caught below via the same race-safe pattern
-  // used for registration (see auth.service.ts and docs/decisions.md).
   const existingPending = await prisma.tripInvite.findFirst({
     where: { tripId, email: input.email, status: 'PENDING' },
   });
@@ -114,8 +109,9 @@ export async function createInvite(
   const tokenHash = hashToken(rawToken);
   const expiresAt = new Date(Date.now() + INVITE_EXPIRY_MS);
 
+  let invite;
   try {
-    const invite = await prisma.$transaction(async (tx) => {
+    invite = await prisma.$transaction(async (tx) => {
       const created = await tx.tripInvite.create({
         data: {
           tripId,
@@ -137,11 +133,22 @@ export async function createInvite(
       });
       return created;
     });
+  } catch (err) {
+    if (
+      err instanceof Prisma.PrismaClientKnownRequestError &&
+      err.code === UNIQUE_CONSTRAINT_VIOLATION
+    ) {
+      throw new ConflictError('There is already a pending invitation for this email');
+    }
+    throw err;
+  }
 
-    const inviter = await prisma.user.findUnique({ where: { id: requesterId } });
-    const trip = await prisma.trip.findUnique({ where: { id: tripId } });
-    const inviteUrl = `${env.APP_URL}/invite?token=${rawToken}`;
+  const inviter = await prisma.user.findUnique({ where: { id: requesterId } });
+  const trip = await prisma.trip.findUnique({ where: { id: tripId } });
+  const inviteUrl = `${env.APP_URL}/invite?token=${rawToken}`;
 
+  let emailSent = true;
+  try {
     await emailService.sendTripInvitation({
       to: input.email,
       inviterName: inviter?.name || 'A travel companion',
@@ -153,17 +160,17 @@ export async function createInvite(
       inviteUrl,
       expiresAt,
     });
-
-    return { invite: toInviteDTO(invite), token: rawToken, inviteUrl };
-  } catch (err) {
-    if (
-      err instanceof Prisma.PrismaClientKnownRequestError &&
-      err.code === UNIQUE_CONSTRAINT_VIOLATION
-    ) {
-      throw new ConflictError('There is already a pending invitation for this email');
-    }
-    throw err;
+  } catch (emailErr) {
+    emailSent = false;
+    // Log safely without raw token
+    const { logger } = await import('@/lib/logger');
+    logger.warn(
+      { email: input.email, tripId, errMessage: emailErr instanceof Error ? emailErr.message : String(emailErr) },
+      'Trip invitation created successfully, but email delivery failed',
+    );
   }
+
+  return { invite: toInviteDTO(invite), token: rawToken, inviteUrl, emailSent };
 }
 
 export interface InviteDetailsDTO {

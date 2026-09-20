@@ -56,7 +56,7 @@ describe('apiClient HTTP 304 and Caching Behavior', () => {
 
     await apiClient.post('/api/v1/trips/123/places', { name: 'New Place' });
 
-    // 3. Next GET request receives 304 without cache entry -> returns undefined instead of throwing 304 error
+    // 3. Next GET request receives 304 without cache entry -> throws controlled ApiClientError instead of returning undefined
     globalThis.fetch = vi.fn().mockResolvedValueOnce({
       ok: false,
       status: 304,
@@ -65,7 +65,6 @@ describe('apiClient HTTP 304 and Caching Behavior', () => {
       },
     } as unknown as Response);
 
-    const result = await apiClient.get('/api/v1/trips/123/places');
-    expect(result).toBeUndefined();
+    await expect(apiClient.get('/api/v1/trips/123/places')).rejects.toThrow();
   });
 });

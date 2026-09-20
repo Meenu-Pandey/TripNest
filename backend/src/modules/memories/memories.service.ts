@@ -2,16 +2,23 @@ import { randomUUID } from 'node:crypto';
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '@/errors/AppError';
 import { logger } from '@/lib/logger';
 import { prisma } from '@/lib/prisma';
+import { env } from '@/config/env';
 import { LocalDiskStorage } from '@/lib/storage/localDiskStorage';
+import { SupabaseStorage } from '@/lib/storage/supabaseStorage';
 import type { ObjectStorage } from '@/lib/storage/storage.interface';
 import { requireTripMembership } from '@/modules/trips/trip-access.service';
 import { broadcastToTrip, REALTIME_EVENTS } from '@/realtime/socket';
 import { extensionForMimeType, validateUploadedFile } from './fileValidation';
 import type { UploadMemoryInput } from './memories.schemas';
 
-// Single shared instance — see weather/geocoding services for the same
-// "one instance per process" pattern applied to an external resource.
-const storage: ObjectStorage = new LocalDiskStorage();
+function createStorageProvider(): ObjectStorage {
+  if (env.STORAGE_PROVIDER === 'supabase') {
+    return new SupabaseStorage();
+  }
+  return new LocalDiskStorage();
+}
+
+const storage: ObjectStorage = createStorageProvider();
 
 /** "Up to two," never exactly two — see schema.prisma's MemoryPhoto doc comment. */
 const MAX_MEMORIES_PER_MEMBER = 2;

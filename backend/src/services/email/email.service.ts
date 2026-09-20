@@ -161,7 +161,39 @@ If you did not expect this invitation, you can safely disregard this email.`;
       this.sentEmails.shift();
     }
 
-    if (this.provider === 'smtp') {
+    if (this.provider === 'resend') {
+      if (!env.RESEND_API_KEY) {
+        logger.error({ to: options.to, provider: this.provider }, 'Resend email delivery failed: RESEND_API_KEY not set');
+        throw new Error('Resend email delivery failed: RESEND_API_KEY not set');
+      }
+
+      try {
+        const res = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${env.RESEND_API_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            from: this.fromAddress,
+            to: [options.to],
+            subject,
+            text,
+            html,
+          }),
+        });
+
+        if (!res.ok) {
+          const errText = await res.text().catch(() => '');
+          throw new Error(`Resend API HTTP ${res.status}: ${errText}`);
+        }
+
+        logger.info({ to: options.to, from: this.fromAddress, subject }, 'Dispatched invitation email via Resend API');
+      } catch (err) {
+        logger.error({ err, to: options.to, from: this.fromAddress, subject }, 'Failed to send invitation email via Resend API');
+        throw err;
+      }
+    } else if (this.provider === 'smtp') {
       if (!this.transporter) {
         logger.error(
           { to: options.to, provider: this.provider },
@@ -280,7 +312,39 @@ If you did not request a password reset, you can safely ignore this email.`;
       this.sentEmails.shift();
     }
 
-    if (this.provider === 'smtp') {
+    if (this.provider === 'resend') {
+      if (!env.RESEND_API_KEY) {
+        logger.error({ to: options.to, provider: this.provider }, 'Resend email delivery failed: RESEND_API_KEY not set');
+        throw new Error('Resend email delivery failed: RESEND_API_KEY not set');
+      }
+
+      try {
+        const res = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${env.RESEND_API_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            from: this.fromAddress,
+            to: [options.to],
+            subject,
+            text,
+            html,
+          }),
+        });
+
+        if (!res.ok) {
+          const errText = await res.text().catch(() => '');
+          throw new Error(`Resend API HTTP ${res.status}: ${errText}`);
+        }
+
+        logger.info({ to: options.to, from: this.fromAddress, subject }, 'Dispatched password reset email via Resend API');
+      } catch (err) {
+        logger.error({ err, to: options.to, from: this.fromAddress, subject }, 'Failed to send password reset email via Resend API');
+        throw err;
+      }
+    } else if (this.provider === 'smtp') {
       if (!this.transporter) {
         logger.error(
           { to: options.to, provider: this.provider },

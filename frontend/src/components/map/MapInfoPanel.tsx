@@ -286,7 +286,7 @@ export function MapInfoPanel({
               <span>Itinerary Context</span>
             </div>
             <p className="text-xs text-forest-800">
-              Straight-line distance from preceding stop{' '}
+              Distance (direct line) from preceding stop{' '}
               <button
                 type="button"
                 onClick={() => onSelectPlace(contextualPredecessor.predecessorPlace.id)}

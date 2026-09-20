@@ -354,13 +354,16 @@ export function TripMembersPage() {
       >
         {createdInviteToken ? (
           <div className="space-y-4">
-            <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-xs text-emerald-800 space-y-2">
-              <p className="font-medium flex items-center gap-1.5">
-                <Check className="h-4 w-4 text-emerald-600" />
-                Invitation Email Dispatched!
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-xs sm:text-sm text-emerald-800 space-y-3">
+              <p className="font-semibold text-emerald-900">
+                {inviteMutation.data?.emailSent === false
+                  ? 'Invitation Created (Email Delivery Failed)'
+                  : 'Invitation Created!'}
               </p>
               <p className="text-emerald-700">
-                An invitation email has been sent to your companion. You can also share the direct invite link below:
+                {inviteMutation.data?.emailSent === false
+                  ? 'Invitation created, but email could not be sent. You can copy the invitation link below:'
+                  : 'An invitation email has been sent to your companion. You can also share the direct invite link below:'}
               </p>
               <div className="rounded-md bg-white border border-emerald-300 p-2 font-mono text-[11px] select-all break-all text-sand-800">
                 {`${window.location.origin}/invite?token=${createdInviteToken}`}

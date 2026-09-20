@@ -217,7 +217,14 @@ export function TripMap({
 
     map.addControl(new NavigationControl({ showCompass: true, showZoom: true }), 'top-right');
 
+    const timeoutTimer = setTimeout(() => {
+      if (isMounted && !mapRef.current?.loaded()) {
+        setMapError('Map could not be loaded within 15 seconds. Please check your connection.');
+      }
+    }, 15000);
+
     map.on('idle', () => {
+      clearTimeout(timeoutTimer);
       setIsMapLoaded((prev) => {
         if (!prev) {
           map.resize();
@@ -232,6 +239,7 @@ export function TripMap({
 
     map.on('load', () => {
       if (!isMounted) return;
+      clearTimeout(timeoutTimer);
       mapRef.current = map;
       setIsMapLoaded(true);
       map.resize();
@@ -263,6 +271,7 @@ export function TripMap({
 
     return () => {
       isMounted = false;
+      clearTimeout(timeoutTimer);
       markers.forEach((marker) => marker.remove());
       markers.clear();
       if (userLocationMarkerRef.current) {

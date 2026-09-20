@@ -1,4 +1,6 @@
+import { env } from '@/config/env';
 import { OllamaProvider } from '@/providers/ai/ollamaProvider';
+import { OpenRouterProvider } from '@/providers/ai/openRouterProvider';
 import type { IOllamaProvider } from '@/providers/ai/ollamaProvider.interface';
 import { buildTripAiContext } from './ai.context';
 import type { AiAction, AiRequestInput } from './ai.schemas';
@@ -31,20 +33,29 @@ export interface AiServiceResult {
   message?: string;
 }
 
+function createDefaultAiProvider(): IOllamaProvider {
+  if (env.AI_PROVIDER === 'openrouter') {
+    return new OpenRouterProvider();
+  }
+  return new OllamaProvider();
+}
+
 export class AiService {
-  constructor(private readonly provider: IOllamaProvider = new OllamaProvider()) {}
+  constructor(private readonly provider: IOllamaProvider = createDefaultAiProvider()) {}
 
   async getStatus(): Promise<AiStatusResult> {
     const health = await this.provider.checkHealth();
 
     if (!health.available) {
+      const isHosted = env.AI_PROVIDER === 'openrouter';
       return {
         available: false,
         status: 'OLLAMA_UNAVAILABLE',
         defaultModel: health.defaultModel,
         models: [],
-        message:
-          'TripNest AI runs locally via Ollama at http://localhost:11434. To enable private local AI, install Ollama from https://ollama.com and run `ollama run llama3.2`. Your normal TripNest features remain fully operational.',
+        message: isHosted
+          ? 'TripNest AI assistant is temporarily unavailable. Please check server OpenRouter key configuration.'
+          : 'TripNest AI runs locally via Ollama at http://localhost:11434. To enable private local AI, install Ollama from https://ollama.com and run `ollama run llama3.2`. Your normal TripNest features remain fully operational.',
       };
     }
 
@@ -54,7 +65,7 @@ export class AiService {
         status: 'MODEL_UNAVAILABLE',
         defaultModel: health.defaultModel,
         models: health.models,
-        message: `Ollama is running, but model '${health.defaultModel}' is not yet downloaded. Run \`ollama pull ${health.defaultModel}\` in your terminal to enable AI planning.`,
+        message: `AI provider is active, but model '${health.defaultModel}' is unavailable.`,
       };
     }
 
@@ -63,7 +74,7 @@ export class AiService {
       status: 'READY',
       defaultModel: health.defaultModel,
       models: health.models,
-      message: `TripNest AI is ready using local model '${health.defaultModel}'.`,
+      message: `TripNest AI is ready using model '${health.defaultModel}'.`,
     };
   }
 

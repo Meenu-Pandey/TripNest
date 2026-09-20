@@ -36,8 +36,8 @@ export const membersService = {
   async createInvite(
     tripId: string,
     input: CreateInviteInput,
-  ): Promise<{ invite: InviteDTO; token: string; inviteUrl?: string }> {
-    return apiClient.post<{ invite: InviteDTO; token: string; inviteUrl?: string }>(
+  ): Promise<{ invite: InviteDTO; token: string; inviteUrl?: string; emailSent?: boolean }> {
+    return apiClient.post<{ invite: InviteDTO; token: string; inviteUrl?: string; emailSent?: boolean }>(
       `/api/v1/trips/${tripId}/invites`,
       input,
     );
