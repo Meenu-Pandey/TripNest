@@ -6,11 +6,11 @@ import { useAuth } from '@/features/auth/useAuth';
 
 beforeAll(() => {
   class IntersectionObserverMock {
-    constructor() {}
-    disconnect() {}
-    observe() {}
+    constructor() { }
+    disconnect() { }
+    observe() { }
     takeRecords() { return []; }
-    unobserve() {}
+    unobserve() { }
   }
   vi.stubGlobal('IntersectionObserver', IntersectionObserverMock);
 });

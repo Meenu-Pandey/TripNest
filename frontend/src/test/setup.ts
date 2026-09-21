@@ -27,26 +27,26 @@ vi.mock('maplibre-gl', () => {
       return this;
     }
 
-    remove() {}
+    remove() { }
 
-    flyTo() {}
+    flyTo() { }
 
-    fitBounds() {}
+    fitBounds() { }
 
     getZoom() {
       return 12;
     }
 
-    resize() {}
+    resize() { }
 
-    triggerRepaint() {}
+    triggerRepaint() { }
   }
 
   if (typeof window !== 'undefined' && !window.ResizeObserver) {
     (window as any).ResizeObserver = class ResizeObserver {
-      observe() {}
-      unobserve() {}
-      disconnect() {}
+      observe() { }
+      unobserve() { }
+      disconnect() { }
     };
   }
 
@@ -77,7 +77,7 @@ vi.mock('maplibre-gl', () => {
     }
   }
 
-  class MockNavigationControl {}
+  class MockNavigationControl { }
 
   class MockLngLatBounds {
     extend() {
