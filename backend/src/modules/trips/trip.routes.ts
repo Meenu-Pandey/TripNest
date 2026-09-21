@@ -3,6 +3,7 @@ import { asyncHandler } from '@/middleware/asyncHandler';
 import { authenticate } from '@/middleware/authenticate';
 import { validate } from '@/middleware/validate';
 import {
+  cancelTripController,
   completeTripController,
   createTripController,
   deleteTripController,
@@ -39,6 +40,12 @@ tripRouter.patch(
   '/:tripId',
   validate({ params: tripIdParamsSchema, body: updateTripSchema }),
   asyncHandler(updateTripController),
+);
+
+tripRouter.post(
+  '/:tripId/cancel',
+  validate({ params: tripIdParamsSchema }),
+  asyncHandler(cancelTripController),
 );
 
 tripRouter.patch(

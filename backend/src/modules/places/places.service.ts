@@ -1,4 +1,4 @@
-import { ForbiddenError, NotFoundError } from '@/errors/AppError';
+import { ConflictError, ForbiddenError, NotFoundError } from '@/errors/AppError';
 import { prisma } from '@/lib/prisma';
 import { requireTripMembership } from '@/modules/trips/trip-access.service';
 import { broadcastToTrip, REALTIME_EVENTS } from '@/realtime/socket';
@@ -48,7 +48,10 @@ export async function createPlace(
   requesterId: string,
   input: CreatePlaceInput,
 ): Promise<PlaceDTO> {
-  const { membership } = await requireTripMembership(tripId, requesterId);
+  const { trip, membership } = await requireTripMembership(tripId, requesterId);
+  if (trip.status === 'CANCELLED') {
+    throw new ConflictError('Cannot modify places on a cancelled trip');
+  }
   if (membership.role === 'VIEWER') {
     throw new ForbiddenError('Viewers cannot add places');
   }
@@ -115,7 +118,10 @@ export async function updatePlace(
   placeId: string,
   input: UpdatePlaceInput,
 ): Promise<PlaceDTO> {
-  const { membership } = await requireTripMembership(tripId, requesterId);
+  const { trip, membership } = await requireTripMembership(tripId, requesterId);
+  if (trip.status === 'CANCELLED') {
+    throw new ConflictError('Cannot modify places on a cancelled trip');
+  }
   if (membership.role === 'VIEWER') {
     throw new ForbiddenError('Viewers cannot edit places');
   }
@@ -139,7 +145,10 @@ export async function deletePlace(
   requesterId: string,
   placeId: string,
 ): Promise<{ id: string }> {
-  const { membership } = await requireTripMembership(tripId, requesterId);
+  const { trip, membership } = await requireTripMembership(tripId, requesterId);
+  if (trip.status === 'CANCELLED') {
+    throw new ConflictError('Cannot modify places on a cancelled trip');
+  }
   if (membership.role === 'VIEWER') {
     throw new ForbiddenError('Viewers cannot remove places');
   }

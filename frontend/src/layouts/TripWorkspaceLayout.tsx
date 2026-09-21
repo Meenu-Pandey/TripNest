@@ -22,6 +22,7 @@ import {
   Menu,
   X,
   Search,
+  AlertTriangle,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -298,6 +299,21 @@ export function TripWorkspaceLayout() {
 
         {/* Main Workspace Content Area */}
         <main className="flex-1 flex flex-col h-[100dvh] overflow-y-auto pt-16 md:pt-0 relative w-full">
+          {trip.status === 'CANCELLED' && (
+            <div className="bg-amber-50 border-b border-amber-200 px-4 py-3 sm:px-6">
+              <div className="mx-auto max-w-7xl flex items-center justify-between gap-3 text-amber-900 text-xs sm:text-sm font-medium">
+                <div className="flex items-center gap-2.5">
+                  <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0" />
+                  <span>
+                    <strong>Cancelled — Historical View:</strong> This trip was cancelled. All financial, expense, itinerary, place, and member records remain preserved in read-only mode.
+                  </span>
+                </div>
+                <Badge variant="danger" className="shrink-0 text-[10px] uppercase">
+                  Read Only
+                </Badge>
+              </div>
+            </div>
+          )}
           <div className="mx-auto max-w-7xl w-full px-4 py-8 sm:px-6 lg:px-10 pb-24">
             <Outlet context={{ trip }} />
           </div>

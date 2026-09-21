@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import { useOutletContext, Link } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Calendar,
   DollarSign,
@@ -13,6 +14,8 @@ import {
   Sparkles,
   CloudSun,
   Search,
+  AlertTriangle,
+  Ban,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
@@ -22,6 +25,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { DestinationCover } from '@/components/ui/DestinationCover';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 import { WeatherCard } from '@/components/weather/WeatherCard';
+import { Modal } from '@/components/ui/Modal';
 
 import { formatDate, formatDateRange, formatRelativeTime, daysBetween, formatTime } from '@/lib/dates';
 import { activityService } from '@/services/activity.service';
@@ -30,12 +34,24 @@ import { placesService } from '@/services/places.service';
 import { weatherService } from '@/services/weather.service';
 import { itineraryService } from '@/services/itinerary.service';
 import { expensesService } from '@/services/expenses.service';
+import { tripsService } from '@/services/trips.service';
 import type { Trip } from '@/types/trips';
 import { useTripAi } from '@/context/TripAiContext';
 
 export function TripOverviewPage() {
   const { trip } = useOutletContext<{ trip: Trip }>();
   const { openDrawer } = useTripAi();
+  const queryClient = useQueryClient();
+  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+
+  const cancelTripMutation = useMutation({
+    mutationFn: () => tripsService.cancelTrip(trip.id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['trip', trip.id] });
+      queryClient.invalidateQueries({ queryKey: ['trips'] });
+      setIsCancelModalOpen(false);
+    },
+  });
 
   const { data: members, isLoading: isMembersLoading } = useQuery({
     queryKey: ['members', trip.id],
@@ -550,6 +566,84 @@ export function TripOverviewPage() {
           </Card>
         </section>
       </div>
+
+      {/* 6. DANGER ZONE (Trip Settings / Cancellation) */}
+      {trip.role === 'OWNER' && trip.status !== 'CANCELLED' && (
+        <section className="pt-6 border-t border-sand-200">
+          <div className="rounded-2xl border border-red-200 bg-red-50/50 p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="space-y-1">
+              <h4 className="font-serif text-base font-semibold text-red-950 flex items-center gap-2">
+                <Ban className="h-4 w-4 text-red-600" />
+                Cancel Trip
+              </h4>
+              <p className="text-xs text-red-800/80 leading-relaxed max-w-2xl">
+                Cancelling a trip stops all future mutations while preserving all expenses, balances, itinerary, places, and member records in historical read-only mode.
+              </p>
+            </div>
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={() => setIsCancelModalOpen(true)}
+              className="shrink-0"
+            >
+              Cancel Trip
+            </Button>
+          </div>
+        </section>
+      )}
+
+      {/* Cancel Trip Confirmation Modal */}
+      <Modal
+        isOpen={isCancelModalOpen}
+        onClose={() => setIsCancelModalOpen(false)}
+        title="Cancel Trip"
+        description={`Are you sure you want to cancel "${trip.name}"?`}
+      >
+        <div className="space-y-4 pt-2">
+          <div className="rounded-xl bg-amber-50 p-4 border border-amber-200 text-amber-900 text-xs sm:text-sm space-y-2">
+            <div className="flex items-center gap-2 font-semibold text-amber-950">
+              <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0" />
+              This action cannot be undone.
+            </div>
+            <p>
+              When cancelled:
+            </p>
+            <ul className="list-disc pl-5 space-y-1 text-amber-800">
+              <li>All historical expenses, balances, settlements, itinerary items, places, and memories will remain preserved.</li>
+              <li>Members will still be able to view all trip records in read-only mode.</li>
+              <li>No new expenses, places, settlements, or itinerary edits will be allowed.</li>
+              <li>Pending invitations will be automatically blocked.</li>
+            </ul>
+          </div>
+
+          {cancelTripMutation.isError && (
+            <div className="rounded-xl bg-red-50 p-3 border border-red-200 text-red-800 text-xs font-medium">
+              {cancelTripMutation.error instanceof Error
+                ? cancelTripMutation.error.message
+                : 'Failed to cancel trip'}
+            </div>
+          )}
+
+          <div className="flex items-center justify-end gap-3 pt-3 border-t border-sand-100">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsCancelModalOpen(false)}
+              disabled={cancelTripMutation.isPending}
+            >
+              Keep Active
+            </Button>
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={() => cancelTripMutation.mutate()}
+              isLoading={cancelTripMutation.isPending}
+            >
+              Yes, Cancel Trip
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

@@ -47,6 +47,15 @@ export const membersService = {
     return apiClient.delete<{ revoked: boolean }>(`/api/v1/trips/${tripId}/invites/${inviteId}`);
   },
 
+  async resendInvite(
+    tripId: string,
+    inviteId: string,
+  ): Promise<{ invite: InviteDTO; token: string; inviteUrl?: string; emailSent?: boolean }> {
+    return apiClient.post<{ invite: InviteDTO; token: string; inviteUrl?: string; emailSent?: boolean }>(
+      `/api/v1/trips/${tripId}/invites/${inviteId}/resend`,
+    );
+  },
+
   async getInviteDetails(token: string): Promise<import('@/types/members').InviteDetailsDTO> {
     const res = await apiClient.get<{ invite: import('@/types/members').InviteDetailsDTO }>(
       `/api/v1/invites/${token}`,

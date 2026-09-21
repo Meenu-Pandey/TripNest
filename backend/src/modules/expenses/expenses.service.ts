@@ -1,4 +1,4 @@
-import { ForbiddenError, NotFoundError, ValidationError } from '@/errors/AppError';
+import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '@/errors/AppError';
 import type { SupportedCurrency } from '@/lib/currency';
 import { toMoneyDTO, type MoneyDTO } from '@/lib/money';
 import { prisma } from '@/lib/prisma';
@@ -307,6 +307,9 @@ export async function updateExpense(
   input: CreateExpenseInput,
 ): Promise<ExpenseDTO> {
   const { trip, membership } = await requireTripMembership(tripId, requesterId);
+  if (trip.status === 'CANCELLED') {
+    throw new ConflictError('Cannot modify expenses on a cancelled trip');
+  }
   if (membership.role === 'VIEWER') {
     throw new ForbiddenError('Viewers cannot edit expenses');
   }
@@ -368,7 +371,10 @@ export async function deleteExpense(
   requesterId: string,
   expenseId: string,
 ): Promise<{ id: string }> {
-  const { membership } = await requireTripMembership(tripId, requesterId);
+  const { trip, membership } = await requireTripMembership(tripId, requesterId);
+  if (trip.status === 'CANCELLED') {
+    throw new ConflictError('Cannot modify expenses on a cancelled trip');
+  }
   if (membership.role === 'VIEWER') {
     throw new ForbiddenError('Viewers cannot delete expenses');
   }

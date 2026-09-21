@@ -22,6 +22,12 @@ export async function revokeInviteController(req: Request, res: Response): Promi
   sendSuccess(res, 200, { invite });
 }
 
+export async function resendInviteController(req: Request, res: Response): Promise<void> {
+  const { tripId, inviteId } = req.params as { tripId: string; inviteId: string };
+  const result = await membersService.resendInvite(tripId, req.userId as string, inviteId);
+  sendSuccess(res, 200, result);
+}
+
 export async function acceptInviteController(req: Request, res: Response): Promise<void> {
   const { token } = req.params as { token: string };
   const result = await membersService.acceptInvite(token, req.userId as string);

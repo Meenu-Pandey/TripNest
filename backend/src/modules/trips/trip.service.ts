@@ -210,6 +210,30 @@ export async function completeTrip(tripId: string, userId: string): Promise<Trip
   return toTripDTO(updated, membership.role);
 }
 
+export async function cancelTrip(tripId: string, userId: string): Promise<TripDTO> {
+  const { membership } = await requireTripOwner(tripId, userId);
+
+  const existing = await prisma.trip.findUnique({ where: { id: tripId } });
+  if (!existing) {
+    const { NotFoundError } = await import('@/errors/AppError');
+    throw new NotFoundError('Trip not found');
+  }
+
+  if (existing.status === 'CANCELLED') {
+    return toTripDTO(existing, membership.role);
+  }
+
+  const updated = await prisma.$transaction(async (tx) => {
+    const trip = await tx.trip.update({ where: { id: tripId }, data: { status: 'CANCELLED' } });
+    await tx.activity.create({
+      data: { tripId, actorId: userId, action: 'TRIP_CANCELLED', entityId: tripId },
+    });
+    return trip;
+  });
+
+  return toTripDTO(updated, membership.role);
+}
+
 export async function deleteTrip(tripId: string, userId: string): Promise<{ id: string }> {
   await requireTripOwner(tripId, userId);
 

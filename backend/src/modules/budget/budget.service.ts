@@ -52,6 +52,9 @@ export async function createBudgetCategory(
   input: CreateBudgetCategoryInput,
 ): Promise<BudgetCategoryDTO> {
   const { trip, membership } = await requireTripMembership(tripId, requesterId);
+  if (trip.status === 'CANCELLED') {
+    throw new ConflictError('Cannot modify budget on a cancelled trip');
+  }
   if (membership.role === 'VIEWER') {
     throw new ForbiddenError('Viewers cannot add budget categories');
   }
@@ -122,6 +125,9 @@ export async function updateBudgetCategory(
   input: UpdateBudgetCategoryInput,
 ): Promise<BudgetCategoryDTO> {
   const { trip, membership } = await requireTripMembership(tripId, requesterId);
+  if (trip.status === 'CANCELLED') {
+    throw new ConflictError('Cannot modify budget on a cancelled trip');
+  }
   if (membership.role === 'VIEWER') {
     throw new ForbiddenError('Viewers cannot edit budget categories');
   }
@@ -157,7 +163,10 @@ export async function deleteBudgetCategory(
   requesterId: string,
   categoryId: string,
 ): Promise<{ id: string }> {
-  const { membership } = await requireTripMembership(tripId, requesterId);
+  const { trip, membership } = await requireTripMembership(tripId, requesterId);
+  if (trip.status === 'CANCELLED') {
+    throw new ConflictError('Cannot modify budget on a cancelled trip');
+  }
   if (membership.role === 'VIEWER') {
     throw new ForbiddenError('Viewers cannot remove budget categories');
   }

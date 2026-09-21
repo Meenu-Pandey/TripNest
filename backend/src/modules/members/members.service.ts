@@ -86,7 +86,10 @@ export async function createInvite(
   requesterId: string,
   input: CreateInviteInput,
 ): Promise<{ invite: InviteDTO; token: string; inviteUrl: string; emailSent: boolean }> {
-  await requireTripOwner(tripId, requesterId);
+  const trip = await prisma.trip.findUnique({ where: { id: tripId } });
+  if (trip?.status === 'CANCELLED') {
+    throw new ConflictError('Cannot invite members to a cancelled trip');
+  }
 
   const existingUser = await prisma.user.findUnique({ where: { email: input.email } });
   if (existingUser) {
@@ -144,7 +147,6 @@ export async function createInvite(
   }
 
   const inviter = await prisma.user.findUnique({ where: { id: requesterId } });
-  const trip = await prisma.trip.findUnique({ where: { id: tripId } });
   const inviteUrl = `${env.APP_URL}/invite?token=${rawToken}`;
 
   let emailSent = true;
@@ -281,6 +283,66 @@ export async function revokeInvite(
   return toInviteDTO(updated);
 }
 
+export async function resendInvite(
+  tripId: string,
+  requesterId: string,
+  inviteId: string,
+): Promise<{ invite: InviteDTO; token: string; inviteUrl: string; emailSent: boolean }> {
+  await requireTripOwner(tripId, requesterId);
+
+  const trip = await prisma.trip.findUnique({ where: { id: tripId } });
+  if (trip?.status === 'CANCELLED') {
+    throw new ConflictError('Cannot resend invitation for a cancelled trip');
+  }
+
+  const invite = await prisma.tripInvite.findUnique({ where: { id: inviteId } });
+  if (!invite || invite.tripId !== tripId) {
+    throw new NotFoundError('Invitation not found');
+  }
+  if (invite.status !== 'PENDING') {
+    throw new ConflictError('Only a pending invitation can be resent');
+  }
+
+  const rawToken = generateSecureToken();
+  const tokenHash = hashToken(rawToken);
+  const expiresAt = new Date(Date.now() + INVITE_EXPIRY_MS);
+
+  const updatedInvite = await prisma.tripInvite.update({
+    where: { id: inviteId },
+    data: {
+      tokenHash,
+      expiresAt,
+    },
+  });
+
+  const inviter = await prisma.user.findUnique({ where: { id: requesterId } });
+  const inviteUrl = `${env.APP_URL}/invite?token=${rawToken}`;
+
+  let emailSent = true;
+  try {
+    await emailService.sendTripInvitation({
+      to: invite.email,
+      inviterName: inviter?.name || 'A travel companion',
+      tripName: trip?.name || 'Trip',
+      destination: trip?.destination,
+      startDate: trip?.startDate,
+      endDate: trip?.endDate,
+      role: invite.role,
+      inviteUrl,
+      expiresAt,
+    });
+  } catch (emailErr) {
+    emailSent = false;
+    const { logger } = await import('@/lib/logger');
+    logger.warn(
+      { email: invite.email, tripId, errMessage: emailErr instanceof Error ? emailErr.message : String(emailErr) },
+      'Trip invitation resent successfully, but email delivery failed',
+    );
+  }
+
+  return { invite: toInviteDTO(updatedInvite), token: rawToken, inviteUrl, emailSent };
+}
+
 /**
  * Claims a pending invitation for the currently authenticated user.
  * Requires the accepting account's email to match the invite's email —
@@ -297,6 +359,11 @@ export async function acceptInvite(
   const invite = await prisma.tripInvite.findUnique({ where: { tokenHash } });
   if (!invite) {
     throw new NotFoundError('Invitation not found or invalid');
+  }
+
+  const trip = await prisma.trip.findUnique({ where: { id: invite.tripId } });
+  if (trip?.status === 'CANCELLED') {
+    throw new ConflictError('Cannot accept invitation because this trip has been cancelled');
   }
 
   if (invite.status !== 'PENDING') {

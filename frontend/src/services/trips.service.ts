@@ -38,4 +38,9 @@ export const tripsService = {
   async deleteTrip(tripId: string): Promise<{ deleted: boolean }> {
     return apiClient.delete<{ deleted: boolean }>(`/api/v1/trips/${tripId}`);
   },
+
+  async cancelTrip(tripId: string): Promise<Trip> {
+    const res = await apiClient.post<{ trip: Trip }>(`/api/v1/trips/${tripId}/cancel`);
+    return res.trip;
+  },
 };

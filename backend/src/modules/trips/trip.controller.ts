@@ -39,3 +39,9 @@ export async function completeTripController(req: Request, res: Response): Promi
   const trip = await tripService.completeTrip(tripId, req.userId as string);
   sendSuccess(res, 200, { trip });
 }
+
+export async function cancelTripController(req: Request, res: Response): Promise<void> {
+  const { tripId } = req.params as { tripId: string };
+  const trip = await tripService.cancelTrip(tripId, req.userId as string);
+  sendSuccess(res, 200, { trip });
+}

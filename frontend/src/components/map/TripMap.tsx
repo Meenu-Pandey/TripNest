@@ -218,13 +218,14 @@ export function TripMap({
     map.addControl(new NavigationControl({ showCompass: true, showZoom: true }), 'top-right');
 
     const timeoutTimer = setTimeout(() => {
-      if (isMounted && !mapRef.current?.loaded()) {
+      if (isMounted && !isMapLoaded) {
         setMapError('Map could not be loaded within 15 seconds. Please check your connection.');
       }
     }, 15000);
 
     map.on('idle', () => {
       clearTimeout(timeoutTimer);
+      mapRef.current = map;
       setIsMapLoaded((prev) => {
         if (!prev) {
           map.resize();

@@ -1,0 +1,2 @@
+-- AlterEnum
+ALTER TYPE "ActivityAction" ADD VALUE IF NOT EXISTS 'TRIP_CANCELLED';

@@ -87,6 +87,7 @@ enum ActivityAction {
   BUDGET_CATEGORY_REMOVED
   MEMORY_ADDED
   TRIP_COMPLETED
+  TRIP_CANCELLED
 }
 
 enum NotificationType {

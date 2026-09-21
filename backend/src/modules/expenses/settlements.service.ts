@@ -48,6 +48,9 @@ export async function markSettlementPaid(
   input: { paymentMethod: 'UPI' | 'CASH' | 'OTHER'; notes?: string },
 ) {
   const { trip, membership } = await requireTripMembership(tripId, requesterId);
+  if (trip.status === 'CANCELLED') {
+    throw new ConflictError('Cannot update settlements on a cancelled trip');
+  }
   if (membership.role === 'VIEWER') {
     throw new ForbiddenError('Viewers cannot record payments');
   }
@@ -107,6 +110,9 @@ export async function confirmSettlement(
   requesterId: string,
 ) {
   const { trip, membership } = await requireTripMembership(tripId, requesterId);
+  if (trip.status === 'CANCELLED') {
+    throw new ConflictError('Cannot update settlements on a cancelled trip');
+  }
   if (membership.role === 'VIEWER') {
     throw new ForbiddenError('Viewers cannot confirm payments');
   }
@@ -217,6 +223,9 @@ export async function attestSettlement(
   requesterId: string,
 ) {
   const { trip, membership } = await requireTripMembership(tripId, requesterId);
+  if (trip.status === 'CANCELLED') {
+    throw new ConflictError('Cannot update settlements on a cancelled trip');
+  }
   if (membership.role === 'VIEWER') {
     throw new ForbiddenError('Viewers cannot attest payments');
   }
@@ -333,6 +342,9 @@ export async function disputeSettlement(
   input: { reason?: string },
 ) {
   const { trip, membership } = await requireTripMembership(tripId, requesterId);
+  if (trip.status === 'CANCELLED') {
+    throw new ConflictError('Cannot update settlements on a cancelled trip');
+  }
   if (membership.role === 'VIEWER') {
     throw new ForbiddenError('Viewers cannot dispute payments');
   }

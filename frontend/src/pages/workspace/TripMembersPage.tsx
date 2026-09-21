@@ -100,6 +100,19 @@ export function TripMembersPage() {
     },
   });
 
+  const resendMutation = useMutation({
+    mutationFn: (inviteId: string) => membersService.resendInvite(trip.id, inviteId),
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: ['invites', trip.id] });
+      setCreatedInviteToken(res.token);
+      setIsInviteModalOpen(true);
+      setActionError(null);
+    },
+    onError: (err: Error) => {
+      setActionError(err.message || 'Failed to resend invitation.');
+    },
+  });
+
   const removeMemberMutation = useMutation({
     mutationFn: (userId: string) => membersService.removeMember(trip.id, userId),
     onSuccess: () => {
@@ -132,6 +145,7 @@ export function TripMembersPage() {
           <Button
             variant="primary"
             size="sm"
+            disabled={trip.status === 'CANCELLED'}
             onClick={() => {
               setCreatedInviteToken(null);
               setActionError(null);
@@ -139,6 +153,7 @@ export function TripMembersPage() {
             }}
             leftIcon={<UserPlus className="h-4 w-4" />}
             className="w-full sm:w-auto"
+            title={trip.status === 'CANCELLED' ? 'Cannot invite companions to a cancelled trip' : undefined}
           >
             Invite Companion
           </Button>
@@ -323,16 +338,30 @@ export function TripMembersPage() {
                           </span>
 
                           {trip.role === 'OWNER' && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => setRevokeInviteId(inv.id)}
-                              className="text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 h-8 px-2.5"
-                              leftIcon={<Trash2 className="h-3.5 w-3.5" />}
-                              title="Revoke invitation"
-                            >
-                              Revoke
-                            </Button>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                disabled={trip.status === 'CANCELLED' || resendMutation.isPending}
+                                onClick={() => resendMutation.mutate(inv.id)}
+                                className="text-xs h-8 px-2.5"
+                                title={trip.status === 'CANCELLED' ? 'Cannot resend invitation for a cancelled trip' : 'Resend invitation'}
+                              >
+                                {resendMutation.isPending ? 'Resending...' : 'Resend'}
+                              </Button>
+
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                disabled={trip.status === 'CANCELLED'}
+                                onClick={() => setRevokeInviteId(inv.id)}
+                                className="text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 h-8 px-2.5"
+                                leftIcon={<Trash2 className="h-3.5 w-3.5" />}
+                                title={trip.status === 'CANCELLED' ? 'Cannot revoke invitation for a cancelled trip' : 'Revoke invitation'}
+                              >
+                                Revoke
+                              </Button>
+                            </div>
                           )}
                         </div>
                       </div>

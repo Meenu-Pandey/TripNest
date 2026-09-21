@@ -7,6 +7,7 @@ import {
   listInvitesController,
   listMembersController,
   removeMemberController,
+  resendInviteController,
   revokeInviteController,
   updateMemberRoleController,
 } from './members.controller';
@@ -42,6 +43,13 @@ memberRouter.get(
   authenticate,
   validate({ params: tripIdParamsSchema }),
   asyncHandler(listInvitesController),
+);
+
+memberRouter.post(
+  '/:tripId/invites/:inviteId/resend',
+  authenticate,
+  validate({ params: inviteParamsSchema }),
+  asyncHandler(resendInviteController),
 );
 
 memberRouter.delete(

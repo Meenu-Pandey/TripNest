@@ -1,4 +1,4 @@
-import { ForbiddenError, NotFoundError, ValidationError } from '@/errors/AppError';
+import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '@/errors/AppError';
 import { prisma } from '@/lib/prisma';
 import { requireTripMembership } from '@/modules/trips/trip-access.service';
 import { broadcastToTrip, REALTIME_EVENTS } from '@/realtime/socket';
@@ -73,7 +73,10 @@ export async function createItineraryItem(
   requesterId: string,
   input: CreateItineraryItemInput,
 ): Promise<ItineraryItemDTO> {
-  const { membership } = await requireTripMembership(tripId, requesterId);
+  const { trip, membership } = await requireTripMembership(tripId, requesterId);
+  if (trip.status === 'CANCELLED') {
+    throw new ConflictError('Cannot modify itinerary on a cancelled trip');
+  }
   if (membership.role === 'VIEWER') {
     throw new ForbiddenError('Viewers cannot add itinerary items');
   }
@@ -132,7 +135,10 @@ async function requireItemAccess(itemId: string, requesterId: string) {
   if (!item) {
     throw new NotFoundError('Itinerary item not found');
   }
-  const { membership } = await requireTripMembership(item.tripId, requesterId);
+  const { trip, membership } = await requireTripMembership(item.tripId, requesterId);
+  if (trip.status === 'CANCELLED') {
+    throw new ConflictError('Cannot modify itinerary on a cancelled trip');
+  }
   return { item, membership };
 }
 
@@ -198,7 +204,10 @@ export async function reorderItinerary(
   requesterId: string,
   input: ReorderItineraryInput,
 ): Promise<ItineraryItemDTO[]> {
-  const { membership } = await requireTripMembership(tripId, requesterId);
+  const { trip, membership } = await requireTripMembership(tripId, requesterId);
+  if (trip.status === 'CANCELLED') {
+    throw new ConflictError('Cannot modify itinerary on a cancelled trip');
+  }
   if (membership.role === 'VIEWER') {
     throw new ForbiddenError('Viewers cannot reorder the itinerary');
   }
