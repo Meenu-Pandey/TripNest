@@ -174,6 +174,7 @@ If you did not expect this invitation, you can safely disregard this email.`;
             Authorization: `Bearer ${env.RESEND_API_KEY}`,
             'Content-Type': 'application/json',
           },
+          signal: AbortSignal.timeout(5000),
           body: JSON.stringify({
             from: this.fromAddress,
             to: [options.to],
@@ -325,6 +326,7 @@ If you did not request a password reset, you can safely ignore this email.`;
             Authorization: `Bearer ${env.RESEND_API_KEY}`,
             'Content-Type': 'application/json',
           },
+          signal: AbortSignal.timeout(5000),
           body: JSON.stringify({
             from: this.fromAddress,
             to: [options.to],
