@@ -19,6 +19,7 @@ vi.mock('@/features/auth/useAuth');
 
 // Mock MapLibre which is rendered inside TripMap
 vi.mock('maplibre-gl', () => ({
+  setWorkerUrl: vi.fn(),
   default: {
     Map: vi.fn(() => ({
       on: vi.fn(),
@@ -39,6 +40,7 @@ vi.mock('maplibre-gl', () => ({
       setDOMContent: vi.fn().mockReturnThis(),
       setOffset: vi.fn().mockReturnThis(),
     })),
+    setWorkerUrl: vi.fn(),
   },
 }));
 

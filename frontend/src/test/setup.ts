@@ -90,11 +90,13 @@ vi.mock('maplibre-gl', () => {
     Marker: MockMarker,
     NavigationControl: MockNavigationControl,
     LngLatBounds: MockLngLatBounds,
+    setWorkerUrl: vi.fn(),
     default: {
       Map: MockMap,
       Marker: MockMarker,
       NavigationControl: MockNavigationControl,
       LngLatBounds: MockLngLatBounds,
+      setWorkerUrl: vi.fn(),
     },
   };
 });

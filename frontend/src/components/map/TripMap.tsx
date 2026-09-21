@@ -4,9 +4,11 @@ import {
   Marker,
   NavigationControl,
   LngLatBounds,
+  setWorkerUrl,
   type MapMouseEvent,
   type ErrorEvent,
 } from 'maplibre-gl';
+import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { Maximize2, Compass, AlertCircle, RefreshCw, Loader2, Navigation, AlertTriangle } from 'lucide-react';
 import type { PlaceDTO } from '@/types/places';
@@ -14,6 +16,8 @@ import { createMarkerElement } from './TripMapMarker';
 import { routingService } from '@/services/routing.service';
 
 const OPENFREEMAP_STYLE = 'https://tiles.openfreemap.org/styles/liberty';
+
+setWorkerUrl(workerUrl);
 
 export interface TripMapProps {
   places: PlaceDTO[];
@@ -46,6 +50,12 @@ export function TripMap({
   const [mapError, setMapError] = useState<string | null>(null);
   const [isMapLoaded, setIsMapLoaded] = useState(false);
   const [initRetryCount, setInitRetryCount] = useState(0);
+  const isMapLoadedRef = useRef(false);
+  const initVersionRef = useRef(0);
+
+  useEffect(() => {
+    isMapLoadedRef.current = isMapLoaded;
+  }, [isMapLoaded]);
 
   // Client-side Geolocation State (STRICTLY CLIENT-SIDE ONLY - NEVER PERSISTED)
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
@@ -181,8 +191,12 @@ export function TripMap({
   useEffect(() => {
     if (!containerRef.current) return;
 
+    const initVersion = ++initVersionRef.current;
     let isMounted = true;
+
+    isMapLoadedRef.current = false;
     setMapError(null);
+    setIsMapLoaded(false);
 
     let initialCenter: [number, number] = [0, 20];
     let initialZoom = 2;
@@ -207,9 +221,11 @@ export function TripMap({
         attributionControl: { compact: true },
       });
     } catch (err) {
-      if (isMounted) {
+      if (isMounted && initVersion === initVersionRef.current) {
         Promise.resolve().then(() => {
-          if (isMounted) setMapError(err instanceof Error ? err.message : 'Failed to initialize map');
+          if (isMounted && initVersion === initVersionRef.current) {
+            setMapError(err instanceof Error ? err.message : 'Failed to initialize map');
+          }
         });
       }
       return;
@@ -217,43 +233,38 @@ export function TripMap({
 
     map.addControl(new NavigationControl({ showCompass: true, showZoom: true }), 'top-right');
 
+    const handleMapReady = () => {
+      if (!isMounted || initVersion !== initVersionRef.current) return;
+      clearTimeout(timeoutTimer);
+      mapRef.current = map;
+      isMapLoadedRef.current = true;
+      setIsMapLoaded((prev) => {
+        if (prev) return prev;
+        map.resize();
+        if (allMapPlacesRef.current.length > 0) {
+          fitAllPlacesRef.current(false);
+        }
+        return true;
+      });
+    };
+
     const timeoutTimer = setTimeout(() => {
-      if (isMounted && !isMapLoaded) {
+      if (isMounted && initVersion === initVersionRef.current && !isMapLoadedRef.current) {
         setMapError('Map could not be loaded within 15 seconds. Please check your connection.');
       }
     }, 15000);
 
-    map.on('idle', () => {
-      clearTimeout(timeoutTimer);
-      mapRef.current = map;
-      setIsMapLoaded((prev) => {
-        if (!prev) {
-          map.resize();
-          if (allMapPlacesRef.current.length > 0) {
-            fitAllPlacesRef.current(false);
-          }
-          return true;
-        }
-        return prev;
-      });
-    });
+    map.on('idle', handleMapReady);
+    map.on('load', handleMapReady);
 
-    map.on('load', () => {
-      if (!isMounted) return;
-      clearTimeout(timeoutTimer);
-      mapRef.current = map;
-      setIsMapLoaded(true);
-      map.resize();
-
-      if (allMapPlacesRef.current.length > 0) {
-        fitAllPlacesRef.current(false);
-      }
-    });
+    if (typeof map.isStyleLoaded === 'function' && map.isStyleLoaded()) {
+      handleMapReady();
+    }
 
     map.on('error', (e: ErrorEvent) => {
       const err = e.error as { status?: number; message?: string } | undefined;
       if (err?.status === 404 || err?.message?.includes('style') || err?.message?.includes('WebGL')) {
-        if (isMounted) {
+        if (isMounted && initVersion === initVersionRef.current) {
           setMapError('Unable to load map tile resources. Please verify network connection.');
         }
       }
@@ -272,6 +283,7 @@ export function TripMap({
 
     return () => {
       isMounted = false;
+      initVersionRef.current += 1;
       clearTimeout(timeoutTimer);
       markers.forEach((marker) => marker.remove());
       markers.clear();
@@ -526,11 +538,10 @@ export function TripMap({
           type="button"
           onClick={handleGetLocation}
           disabled={isLocating}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg backdrop-blur-xs text-xs font-medium shadow-md border transition-all cursor-pointer ${
-            userLocation
-              ? 'bg-sky-600 text-white border-sky-700 hover:bg-sky-700'
-              : 'bg-white/95 text-sand-800 border-sand-200 hover:bg-white hover:text-sky-700'
-          }`}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg backdrop-blur-xs text-xs font-medium shadow-md border transition-all cursor-pointer ${userLocation
+            ? 'bg-sky-600 text-white border-sky-700 hover:bg-sky-700'
+            : 'bg-white/95 text-sand-800 border-sand-200 hover:bg-white hover:text-sky-700'
+            }`}
           title="Show client-side current location (never saved)"
           aria-label="Show my location"
         >
