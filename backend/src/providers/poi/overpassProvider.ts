@@ -7,6 +7,7 @@ const ENDPOINTS = [
   'https://overpass-api.de/api/interpreter',
   'https://z.overpass-api.de/api/interpreter',
   'https://lz4.overpass-api.de/api/interpreter',
+  'https://overpass.private.coffee/api/interpreter',
 ];
 const REQUEST_TIMEOUT_MS = 25000;
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24h
@@ -124,7 +125,11 @@ export class OverpassProvider implements PoiDiscoveryProvider {
     // Retry across different public Overpass mirrors
     for (const endpoint of ENDPOINTS) {
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+      let timedOut = false;
+      const timeout = setTimeout(() => {
+        timedOut = true;
+        controller.abort();
+      }, REQUEST_TIMEOUT_MS);
 
       try {
         const response = await fetch(endpoint, {
@@ -140,10 +145,7 @@ export class OverpassProvider implements PoiDiscoveryProvider {
         });
 
         if (!response.ok) {
-          if (response.status === 429) {
-            throw new PoiDiscoveryUnavailableError('Overpass API rate limit exceeded (429)');
-          }
-          throw new PoiDiscoveryUnavailableError(`Overpass (${endpoint}) returned HTTP ${response.status}`);
+          throw new Error(`HTTP ${response.status}`);
         }
 
         const data = (await response.json()) as OverpassResponse;
@@ -192,14 +194,22 @@ export class OverpassProvider implements PoiDiscoveryProvider {
         const limitedResults = params.limit ? results.slice(0, params.limit) : results;
 
         this.cache.set(cacheKey, limitedResults);
+        // eslint-disable-next-line no-console
+        console.info(`[Overpass] Success on endpoint ${endpoint}: ${limitedResults.length} POIs`);
         clearTimeout(timeout);
         return limitedResults;
 
       } catch (err) {
         lastError = err instanceof Error ? err : new Error(String(err));
+        const failureType = timedOut || lastError.name === 'AbortError'
+          ? 'timeout'
+          : lastError.message.startsWith('HTTP ')
+            ? 'HTTP status failure'
+            : 'network/fetch failure';
         // eslint-disable-next-line no-console
-        console.warn(`[Overpass] Failed on endpoint ${endpoint}:`, lastError.message);
+        console.warn(`[Overpass] ${failureType} on endpoint ${endpoint}: ${lastError.message}`);
       } finally {
+        timedOut = false;
         clearTimeout(timeout);
       }
     }
