@@ -86,8 +86,8 @@ export async function createInvite(
   requesterId: string,
   input: CreateInviteInput,
 ): Promise<{ invite: InviteDTO; token: string; inviteUrl: string; emailSent: boolean }> {
-  const trip = await prisma.trip.findUnique({ where: { id: tripId } });
-  if (trip?.status === 'CANCELLED') {
+  const { trip } = await requireTripOwner(tripId, requesterId);
+  if (trip.status === 'CANCELLED') {
     throw new ConflictError('Cannot invite members to a cancelled trip');
   }
 

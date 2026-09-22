@@ -29,7 +29,7 @@ describe('DiscoveryService Provider Routing and Fallback', () => {
         id: 'trip-1',
         destination: 'Paris, France',
       },
-    } as any);
+    } as unknown as Awaited<ReturnType<typeof requireTripMembership>>);
   });
 
   it('uses primary Geoapify provider when it succeeds', async () => {

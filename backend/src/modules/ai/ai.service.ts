@@ -12,7 +12,7 @@ export interface ProposedItineraryStop {
   placeName: string | null;
 }
 
-export type AiAvailabilityStatus = 'READY' | 'AI_UNAVAILABLE' | 'MODEL_UNAVAILABLE';
+export type AiAvailabilityStatus = 'READY' | 'OLLAMA_UNAVAILABLE' | 'MODEL_UNAVAILABLE';
 
 export interface AiStatusResult {
   available: boolean;
@@ -49,10 +49,10 @@ export class AiService {
     if (!health.available) {
       return {
         available: false,
-        status: 'AI_UNAVAILABLE',
+        status: 'OLLAMA_UNAVAILABLE',
         defaultModel: health.defaultModel,
         models: [],
-        message: 'TripNest AI assistant is temporarily unavailable. Please try again shortly.',
+        message: 'TripNest AI runs locally via Ollama. Please ensure Ollama is installed and running.',
       };
     }
 
@@ -62,7 +62,7 @@ export class AiService {
         status: 'MODEL_UNAVAILABLE',
         defaultModel: health.defaultModel,
         models: health.models,
-        message: `AI provider is active, but model '${health.defaultModel}' is unavailable.`,
+        message: `AI provider is active, but model '${health.defaultModel}' is not yet downloaded. Run \`ollama pull ${health.defaultModel}\`.`,
       };
     }
 
@@ -119,7 +119,7 @@ export class AiService {
     } catch (err) {
       return {
         available: false,
-        status: 'AI_UNAVAILABLE',
+        status: 'OLLAMA_UNAVAILABLE',
         reason: 'AI_ERROR',
         message:
           err instanceof Error

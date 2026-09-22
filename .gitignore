@@ -96,3 +96,5 @@ puppeteer_qa/qa_report.json
 *.swp
 *.swo
 *~
+
+file_list.txt

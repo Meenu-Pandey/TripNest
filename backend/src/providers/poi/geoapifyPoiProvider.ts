@@ -81,21 +81,18 @@ export class GeoapifyPoiProvider implements PoiDiscoveryProvider {
     if (categories.some((c) => c.startsWith('catering'))) return 'Restaurant';
     if (categories.some((c) => c.startsWith('accommodation'))) return 'Lodging';
     if (
-      catSet.has('tourism.sights') ||
-      catSet.has('tourism.attraction') ||
-      categories.some((c) => c.startsWith('tourism'))
-    ) {
-      return 'Sightseeing';
-    }
-    if (catSet.has('leisure.park') || categories.some((c) => c.startsWith('natural'))) {
-      return 'Nature';
-    }
-    if (
       catSet.has('entertainment.museum') ||
       catSet.has('entertainment.culture') ||
       catSet.has('building.historic')
     ) {
       return 'Culture';
+    }
+    if (
+      catSet.has('tourism.sights') ||
+      catSet.has('tourism.attraction') ||
+      categories.some((c) => c.startsWith('tourism'))
+    ) {
+      return 'Sightseeing';
     }
     if (
       categories.some(

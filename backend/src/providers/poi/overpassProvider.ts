@@ -2,6 +2,7 @@ import { TtlCache } from '@/lib/ttlCache';
 import { MinIntervalThrottle } from '@/lib/throttle';
 import type { PoiDiscoveryProvider, PoiDiscoveryParams, DiscoveredPoi } from './poiDiscoveryProvider.interface';
 import { env } from '@/config/env';
+import { logger } from '@/lib/logger';
 
 const ENDPOINTS = [
   'https://overpass-api.de/api/interpreter',
@@ -268,12 +269,12 @@ export class OverpassProvider implements PoiDiscoveryProvider {
       const finalMessage = totalTimedOut || lastError?.message.includes('timed out') || lastError?.name === 'AbortError'
         ? 'Overpass API requests timed out across all mirrors'
         : lastError?.message || 'Unknown error contacting Overpass API';
-      console.warn(JSON.stringify({
+      logger.warn({
         provider: 'overpass',
         classification: 'provider unavailable',
         elapsedMs: TOTAL_REQUEST_TIMEOUT_MS - Math.max(0, deadline - Date.now()),
         error: finalMessage,
-      }));
+      }, 'Overpass provider unavailable');
       throw new PoiDiscoveryUnavailableError(finalMessage);
     } finally {
       clearTimeout(totalTimeout);
