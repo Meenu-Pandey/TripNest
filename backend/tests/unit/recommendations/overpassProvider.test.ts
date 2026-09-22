@@ -97,4 +97,46 @@ describe('OverpassProvider', () => {
         await expect(new OverpassProvider().discoverNearby(params)).resolves.toHaveLength(1);
         expect(global.fetch).toHaveBeenCalledTimes(2);
     });
+
+    it('probes every configured endpoint with a lightweight request', async () => {
+        global.fetch = jest.fn().mockResolvedValue(response([]));
+
+        const result = await new OverpassProvider().probeEndpoints();
+
+        expect(result).toHaveLength(4);
+        expect(result.every((probe) => probe.classification === 'success')).toBe(true);
+        expect(global.fetch).toHaveBeenCalledTimes(4);
+        expect((global.fetch as jest.Mock).mock.calls[0][1].body).toContain('[out:json][timeout:1]');
+    });
+
+    it('aborts a hanging provider at the global deadline instead of waiting 25 seconds', async () => {
+        jest.useFakeTimers();
+        const signals: AbortSignal[] = [];
+        global.fetch = jest.fn((_endpoint: string | URL | Request, options?: RequestInit) => {
+            const signal = options?.signal as AbortSignal;
+            signals.push(signal);
+            if (signals.length < 4) {
+                return Promise.reject(new Error('fetch failed'));
+            }
+            return new Promise((_resolve, reject) => {
+                signal.addEventListener('abort', () => {
+                    reject(Object.assign(new Error('aborted'), { name: 'AbortError' }));
+                }, { once: true });
+            });
+        });
+
+        try {
+            const resultPromise = new OverpassProvider().discoverNearby(params);
+            const rejection = expect(resultPromise).rejects.toMatchObject({
+                message: 'Overpass API requests timed out across all mirrors',
+            });
+            await jest.advanceTimersByTimeAsync(12000);
+
+            await rejection;
+            expect(global.fetch).toHaveBeenCalledTimes(4);
+            expect(signals[3]?.aborted).toBe(true);
+        } finally {
+            jest.useRealTimers();
+        }
+    });
 });

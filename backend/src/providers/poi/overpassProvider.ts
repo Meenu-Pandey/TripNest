@@ -9,9 +9,10 @@ const ENDPOINTS = [
   'https://lz4.overpass-api.de/api/interpreter',
   'https://overpass.private.coffee/api/interpreter',
 ];
-const REQUEST_TIMEOUT_MS = 25000;
+const REQUEST_TIMEOUT_MS = 8000;
+const TOTAL_REQUEST_TIMEOUT_MS = 12000;
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24h
-const OVERPASS_TIMEOUT_SEC = 25;
+const OVERPASS_TIMEOUT_SEC = 8;
 
 // Overpass API public instance limit: ~2 requests per second (from a single IP),
 // but we throttle to 1.5s to be extremely safe against 429s.
@@ -34,8 +35,15 @@ const CATEGORY_MAP: Record<string, string[]> = {
   Culture: ['"tourism"~"museum|gallery"', '"historic"~"monument|ruins|castle|archaeological_site"'],
   Activities: ['"leisure"~"sports_centre|stadium|water_park|amusement_park"'],
   Shopping: ['"shop"', '"amenity"="market"'],
-  Transit: ['"amenity"~"bus_station|bicycle_rental"', '"public_transport"="station"', '"railway"="station"'],
 };
+
+export interface OverpassProbeResult {
+  endpoint: string;
+  elapsedMs: number;
+  classification: 'success' | 'timeout' | 'network/fetch failure' | 'HTTP status failure' | 'response parsing failure';
+  status?: number;
+  error?: string;
+}
 
 interface OverpassElement {
   type: string;
@@ -81,7 +89,7 @@ export class OverpassProvider implements PoiDiscoveryProvider {
     }
 
     // [out:json][timeout:X]; (...) out center;
-    return `[out:json][timeout:${OVERPASS_TIMEOUT_SEC}];\n(\n${queryBody});\nout center ${params.limit || 50};`;
+    return `[out:json][timeout:${OVERPASS_TIMEOUT_SEC}];\n(\n${queryBody});\nout center ${Math.min(params.limit || 50, 50)};`;
   }
 
   private mapCategory(tags: Record<string, string>): string {
@@ -118,43 +126,70 @@ export class OverpassProvider implements PoiDiscoveryProvider {
     const cached = this.cache.get(cacheKey);
     if (cached) return cached;
 
-    await sharedThrottle.throttle();
-
     let lastError: Error | null = null;
+    const deadline = Date.now() + TOTAL_REQUEST_TIMEOUT_MS;
+    let totalTimedOut = false;
+    const operationController = new AbortController();
+    const totalTimeout = setTimeout(() => {
+      totalTimedOut = true;
+      operationController.abort();
+    }, TOTAL_REQUEST_TIMEOUT_MS);
 
-    // Retry across different public Overpass mirrors
-    for (const endpoint of ENDPOINTS) {
-      const controller = new AbortController();
-      let timedOut = false;
-      const timeout = setTimeout(() => {
-        timedOut = true;
-        controller.abort();
-      }, REQUEST_TIMEOUT_MS);
+    try {
+      await sharedThrottle.throttle();
 
-      try {
-        const response = await fetch(endpoint, {
-          method: 'POST',
-          body: query,
-          signal: controller.signal,
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'User-Agent': env.TRIPNEST_CONTACT_EMAIL
-              ? `TripNest/1.0 (${env.TRIPNEST_CONTACT_EMAIL})`
-              : 'TripNest/1.0 (backend portfolio project)',
-          },
-        });
+      if (operationController.signal.aborted) {
+        throw new PoiDiscoveryUnavailableError('Overpass API requests timed out across all mirrors');
+      }
 
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}`);
-        }
+      // Retry across different public Overpass mirrors.
+      for (const endpoint of ENDPOINTS) {
+        const remainingMs = deadline - Date.now();
+        if (remainingMs <= 0 || operationController.signal.aborted) break;
 
-        const data = (await response.json()) as OverpassResponse;
+        const controller = new AbortController();
+        const abortFromOperation = () => controller.abort();
+        operationController.signal.addEventListener('abort', abortFromOperation, { once: true });
+        let timedOut = false;
+        const startedAt = Date.now();
+        const timeout = setTimeout(() => {
+          timedOut = true;
+          controller.abort();
+        }, Math.min(REQUEST_TIMEOUT_MS, remainingMs));
+        let responseStatus: number | undefined;
+        let responseReceived = false;
 
-        // Return processing immediately if successful
-        const results: DiscoveredPoi[] = [];
-        const seenNames = new Set<string>();
+        try {
+          const response = await fetch(endpoint, {
+            method: 'POST',
+            body: query,
+            signal: controller.signal,
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+              'User-Agent': env.TRIPNEST_CONTACT_EMAIL
+                ? `TripNest/1.0 (${env.TRIPNEST_CONTACT_EMAIL})`
+                : 'TripNest/1.0 (backend portfolio project)',
+            },
+          });
+          responseReceived = true;
+          responseStatus = response.status;
 
-        for (const el of data.elements) {
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+          }
+
+          let data: OverpassResponse;
+          try {
+            data = (await response.json()) as OverpassResponse;
+          } catch (err) {
+            throw new Error(`Response parsing failed: ${err instanceof Error ? err.message : String(err)}`);
+          }
+
+          // Return processing immediately if successful
+          const results: DiscoveredPoi[] = [];
+          const seenNames = new Set<string>();
+
+          for (const el of data.elements) {
           if (!el.tags || !el.tags.name) continue; // Skip unnamed POIs
 
           const lat = el.lat ?? el.center?.lat;
@@ -188,40 +223,108 @@ export class OverpassProvider implements PoiDiscoveryProvider {
             distanceKm,
             tags: el.tags,
           });
+          }
+
+          results.sort((a, b) => a.distanceKm - b.distanceKm);
+          const limitedResults = params.limit ? results.slice(0, params.limit) : results;
+
+          this.cache.set(cacheKey, limitedResults);
+          // eslint-disable-next-line no-console
+          console.info(JSON.stringify({
+            provider: 'overpass',
+            endpoint,
+            elapsedMs: Date.now() - startedAt,
+            classification: 'success',
+            status: responseStatus,
+            resultCount: limitedResults.length,
+          }));
+          return limitedResults;
+
+        } catch (err) {
+          lastError = err instanceof Error ? err : new Error(String(err));
+          const failureType = totalTimedOut || timedOut || lastError.name === 'AbortError'
+            ? 'timeout'
+            : lastError.message.startsWith('HTTP ')
+              ? 'HTTP status failure'
+              : responseReceived
+                ? 'response parsing failure'
+                : 'network/fetch failure';
+          // eslint-disable-next-line no-console
+          console.warn(JSON.stringify({
+            provider: 'overpass',
+            endpoint,
+            elapsedMs: Date.now() - startedAt,
+            classification: failureType,
+            ...(responseStatus === undefined ? {} : { status: responseStatus }),
+            error: lastError.message,
+          }));
+          if (operationController.signal.aborted) break;
+        } finally {
+          operationController.signal.removeEventListener('abort', abortFromOperation);
+          clearTimeout(timeout);
         }
+      }
 
-        results.sort((a, b) => a.distanceKm - b.distanceKm);
-        const limitedResults = params.limit ? results.slice(0, params.limit) : results;
+      const finalMessage = totalTimedOut || lastError?.message.includes('timed out') || lastError?.name === 'AbortError'
+        ? 'Overpass API requests timed out across all mirrors'
+        : lastError?.message || 'Unknown error contacting Overpass API';
+      console.warn(JSON.stringify({
+        provider: 'overpass',
+        classification: 'provider unavailable',
+        elapsedMs: TOTAL_REQUEST_TIMEOUT_MS - Math.max(0, deadline - Date.now()),
+        error: finalMessage,
+      }));
+      throw new PoiDiscoveryUnavailableError(finalMessage);
+    } finally {
+      clearTimeout(totalTimeout);
+    }
+  }
 
-        this.cache.set(cacheKey, limitedResults);
-        // eslint-disable-next-line no-console
-        console.info(`[Overpass] Success on endpoint ${endpoint}: ${limitedResults.length} POIs`);
-        clearTimeout(timeout);
-        return limitedResults;
-
+  async probeEndpoints(): Promise<OverpassProbeResult[]> {
+    const query = '[out:json][timeout:1];node(0,0,0,0);out ids;';
+    return Promise.all(ENDPOINTS.map(async (endpoint): Promise<OverpassProbeResult> => {
+      const startedAt = Date.now();
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+      try {
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          body: query,
+          signal: controller.signal,
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'User-Agent': env.TRIPNEST_CONTACT_EMAIL
+              ? `TripNest/1.0 (${env.TRIPNEST_CONTACT_EMAIL})`
+              : 'TripNest/1.0 (backend portfolio project)',
+          },
+        });
+        if (!response.ok) {
+          return { endpoint, elapsedMs: Date.now() - startedAt, classification: 'HTTP status failure', status: response.status };
+        }
+        try {
+          await response.json();
+        } catch (err) {
+          return {
+            endpoint,
+            elapsedMs: Date.now() - startedAt,
+            classification: 'response parsing failure',
+            status: response.status,
+            error: err instanceof Error ? err.message : String(err),
+          };
+        }
+        return { endpoint, elapsedMs: Date.now() - startedAt, classification: 'success', status: response.status };
       } catch (err) {
-        lastError = err instanceof Error ? err : new Error(String(err));
-        const failureType = timedOut || lastError.name === 'AbortError'
-          ? 'timeout'
-          : lastError.message.startsWith('HTTP ')
-            ? 'HTTP status failure'
-            : 'network/fetch failure';
-        // eslint-disable-next-line no-console
-        console.warn(`[Overpass] ${failureType} on endpoint ${endpoint}: ${lastError.message}`);
+        const error = err instanceof Error ? err : new Error(String(err));
+        return {
+          endpoint,
+          elapsedMs: Date.now() - startedAt,
+          classification: error.name === 'AbortError' ? 'timeout' : 'network/fetch failure',
+          error: error.message,
+        };
       } finally {
-        timedOut = false;
         clearTimeout(timeout);
       }
-    }
-
-    // If we exhaust all mirrors
-    if (lastError instanceof PoiDiscoveryUnavailableError) throw lastError;
-    if (lastError && lastError.name === 'AbortError') {
-      throw new PoiDiscoveryUnavailableError('Overpass API requests timed out across all mirrors');
-    }
-    throw new PoiDiscoveryUnavailableError(
-      lastError ? lastError.message : 'Unknown error contacting Overpass API'
-    );
+    }));
   }
 
 }

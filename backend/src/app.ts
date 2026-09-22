@@ -24,6 +24,7 @@ import { usersRouter } from '@/modules/users/users.routes';
 import { weatherRouter } from '@/modules/weather/weather.routes';
 import { routingRouter } from '@/modules/routing/routing.routes';
 import { aiStatusRouter, aiTripRouter } from '@/modules/ai/ai.routes';
+import { diagnosticRouter } from '@/modules/diagnostic/diagnostic.routes';
 
 /**
  * Builds the Express app without starting it. Kept separate from
@@ -86,6 +87,8 @@ export function createApp(): Express {
         },
       );
   });
+
+  app.use('/api/v1/diagnostic', diagnosticRouter);
 
   app.get('/api/v1/diagnostic', async (_req, res) => {
     if (env.NODE_ENV === 'production') {
