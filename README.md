@@ -4,24 +4,13 @@
 
 ### Plan together. Travel smarter. Remember everything.
 
-A collaborative travel-planning platform that brings **itineraries, places, expenses, budgets, maps, weather, recommendations, notifications, memories, and AI assistance** into one trip-centered workspace.
-
-<br>
+A collaborative travel-planning platform that brings trip planning, places,
+itineraries, expenses, budgets, maps, weather, notifications, memories,
+and AI assistance into one workspace.
 
 [![Live Demo](https://img.shields.io/badge/🌍%20Live%20Demo-TripNest-e76f51?style=for-the-badge)](https://trip-nest-eight-pied.vercel.app/)
-[![Backend API](https://img.shields.io/badge/⚡%20Backend-Render-46a758?style=for-the-badge)](https://tripnest-zytu.onrender.com/)
+[![Backend](https://img.shields.io/badge/⚡%20Backend-Render-46a758?style=for-the-badge)](https://tripnest-zytu.onrender.com/)
 [![GitHub](https://img.shields.io/badge/💻%20Source-GitHub-181717?style=for-the-badge&logo=github)](https://github.com/Meenu-Pandey/TripNest)
-
-<br>
-
-![React](https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react&logoColor=white)
-![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=flat-square&logo=typescript&logoColor=white)
-![Node.js](https://img.shields.io/badge/Node.js-22-339933?style=flat-square&logo=node.js&logoColor=white)
-![Express](https://img.shields.io/badge/Express.js-4-000000?style=flat-square&logo=express&logoColor=white)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?style=flat-square&logo=postgresql&logoColor=white)
-![Prisma](https://img.shields.io/badge/Prisma-5-2D3748?style=flat-square&logo=prisma&logoColor=white)
-![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=flat-square&logo=docker&logoColor=white)
-![MapLibre](https://img.shields.io/badge/MapLibre-GL-396CB2?style=flat-square)
 
 </div>
 
@@ -29,166 +18,104 @@ A collaborative travel-planning platform that brings **itineraries, places, expe
 
 ## 🌍 What is TripNest?
 
-Planning a group trip usually means jumping between multiple applications:
+Planning a group trip often means switching between maps, notes,
+messaging apps, spreadsheets, weather apps, and expense trackers.
 
-**WhatsApp → Google Maps → Notes → Spreadsheets → Expense Apps → Weather Apps**
+**TripNest brings these workflows together into one trip-centered
+workspace.**
 
-TripNest brings these workflows together in a single collaborative workspace.
-
-With TripNest, a group can:
+With TripNest, groups can:
 
 - Create and manage trips
-- Invite travel companions
-- Build shared itineraries
-- Save and discover places
-- Track group expenses
-- Split expenses in multiple ways
+- Invite members and manage roles
+- Build collaborative itineraries
+- Discover and save places
+- Track and split group expenses
 - See who owes whom
-- Manage settlements
-- Plan budgets
+- Record settlements
+- Manage trip budgets
 - Explore destinations on an interactive map
 - Check weather
 - Receive recommendations
 - Get AI-assisted planning suggestions
-- Share trip memories
+- Store trip memories
 - Receive activity notifications
 
 ---
 
-# ✨ Core Features
+## ✨ Features
 
-<table>
-<tr>
-<td width="50%">
+### 🧭 Trip Management
 
-## 🧭 Trip Planning
-
-- Create trips
-- Edit trip details
-- Manage trip members
+- Trip creation and editing
+- Member invitations
 - Role-based permissions
-- Invitation system
+- Ownership management
 - Trip activity history
-- Trip completion workflow
+- Trip cancellation/completion
 
-</td>
+### 🗓️ Itinerary
 
-<td width="50%">
+- Date and time-based activities
+- Saved-place integration
+- Reordering
+- Chronological timeline
+- Responsive mobile experience
 
-## 🗓️ Itinerary
+### 📍 Places & Explore
 
-- Create itinerary items
-- Assign dates and times
-- Attach saved places
-- Reorder activities
-- Chronological organization
-- Mobile-friendly timeline
-- Persistent backend state
-
-</td>
-</tr>
-
-<tr>
-<td width="50%">
-
-## 📍 Places & Discovery
-
-- Save places
-- Edit and delete places
+- Save and manage places
 - Geocoding
-- Coordinates
-- Place categories
-- Nearby discovery
-- Recommendation engine
-- Map integration
-
-</td>
-
-<td width="50%">
-
-## 🗺️ Interactive Maps
-
-- MapLibre GL JS
-- OpenFreeMap
-- OpenStreetMap data
-- Saved-place markers
-- Marker selection
+- Nearby POI discovery
+- Category-based exploration
 - Distance calculations
-- Fit-to-places
-- Responsive map workspace
+- Interactive map integration
+- Geoapify-powered destination discovery
 
-</td>
-</tr>
+### 💰 Expenses
 
-<tr>
-<td width="50%">
+Supports four splitting strategies:
 
-## 💰 Group Expenses
+- Equal
+- Exact
+- Percentage
+- Shares
 
-Supports:
+Additional features:
 
-- Equal splitting
-- Exact amounts
-- Percentage splitting
-- Share-based splitting
-- Expense editing
-- Expense deletion
-- Payment tracking
-- Idempotent creation
-
-</td>
-
-<td width="50%">
-
-## 💳 Balances & Settlements
-
+- Expense editing/deletion
+- Multiple participants
 - Automatic balance calculation
-- Who owes whom
+- Idempotent expense creation
+
+### 💳 Balances & Settlements
+
+- See who owes whom
+- Automatic balance calculation
 - Settlement suggestions
-- Payment state tracking
-- Repayment recording
-- Cash confirmation
-- Payment workflow
-- Financial audit trail
+- Payment recording
+- Settlement confirmation
+- Financial history
 
-</td>
-</tr>
+### 💵 Budget
 
-<tr>
-<td width="50%">
-
-## 💵 Budget Planning
-
-- Trip budget target
+- Trip budget
 - Budget categories
 - Planned spending
 - Actual spending
 - Remaining budget
-- Per-person estimates
-- Progress tracking
+- Spending progress
 - Over-budget indicators
 
-</td>
-
-<td width="50%">
-
-## 🌤️ Weather
+### 🌤️ Travel Utilities
 
 - Destination weather
 - Saved-place weather
-- Current conditions
-- Multi-day forecast
-- Weather icons
-- Graceful external API failures
-- Backend-proxied requests
+- Multi-day forecasts
+- Maps and routing
+- Nearby destination discovery
 
-</td>
-</tr>
-
-<tr>
-<td width="50%">
-
-## 🤖 AI Trip Copilot
+### 🤖 AI Trip Copilot
 
 - Trip summaries
 - Itinerary suggestions
@@ -197,233 +124,177 @@ Supports:
 - Context-aware assistance
 - Markdown responses
 - Verified-data context
-- Offline/unavailable handling
+- Graceful unavailable-state handling
 
-</td>
+### 📸 Memories
 
-<td width="50%">
-
-## 📸 Memories
-
-- Trip completion
 - Photo uploads
 - Captions
-- Favorite photos
+- Favorites
 - Gallery
 - Lightbox viewing
 - Permission-aware deletion
-- Photo limits
 
-</td>
-</tr>
+### 🔔 Notifications
 
-<tr>
-<td width="50%">
-
-## 🔔 Notifications
-
-- Member joined
-- Expense added
-- Activity notifications
+- Trip activity notifications
+- Expense notifications
+- Member activity
 - Read/unread state
 - Notification center
-- Email invitation support
+- Email invitations
 
-</td>
+---
 
-<td width="50%">
+## 🏗️ Architecture
 
-## 🔐 Security
+```text
+                    ┌───────────────────────┐
+                    │      TripNest UI      │
+                    │   React + TypeScript  │
+                    └───────────┬───────────┘
+                                │
+                              HTTPS
+                                │
+                                ▼
+                    ┌───────────────────────┐
+                    │     Express API       │
+                    │   Node + TypeScript   │
+                    └───────────┬───────────┘
+                                │
+              ┌─────────────────┼─────────────────┐
+              │                 │                 │
+              ▼                 ▼                 ▼
+       ┌────────────┐    ┌────────────┐    ┌──────────────┐
+       │ PostgreSQL │    │  Socket.IO │    │ External APIs│
+       │   Prisma   │    │  Realtime  │    │              │
+       └────────────┘    └────────────┘    └──────┬───────┘
+                                                   │
+                         ┌─────────────────────────┼──────────────┐
+                         │                         │              │
+                         ▼                         ▼              ▼
+                    Geoapify                 Open-Meteo      Maps/Routing
+```
+
+---
+
+## 🧠 Engineering Highlights
+
+### Deterministic Money Handling
+
+Financial values are stored using **integer minor units** rather than
+floating-point numbers.
+
+```text
+₹1,250.50
+    ↓
+125050 minor units
+    ↓
+BigInt arithmetic
+    ↓
+Deterministic calculations
+```
+
+This is used across expenses, splits, balances, settlements, and budgets.
+
+### Backend as the Source of Truth
+
+Security-sensitive and financial decisions are handled on the backend.
+
+```text
+React
+  ↓
+Express API
+  ↓
+Validation
+  ↓
+Business Logic
+  ↓
+Prisma
+  ↓
+PostgreSQL
+```
+
+The frontend does not independently determine permissions, balances,
+settlement state, or financial calculations.
+
+### Provider-Based External Integrations
+
+External services are isolated behind backend provider abstractions.
+
+```text
+Explore
+   ↓
+DiscoveryService
+   ↓
+PoiDiscoveryProvider
+   ↓
+Geoapify
+```
+
+This keeps external API failures from leaking directly into the
+frontend architecture.
+
+### AI With Guardrails
+
+AI acts as an assistant rather than an autonomous database actor.
+
+```text
+Trip Context
+     ↓
+AI Request
+     ↓
+AI Proposal
+     ↓
+User Review
+     ↓
+Backend Validation
+     ↓
+Database
+```
+
+### Security
+
+TripNest includes:
 
 - Argon2id password hashing
 - JWT authentication
 - Rate limiting
-- Helmet
+- Helmet security headers
+- CORS configuration
 - Zod validation
 - RBAC
 - IDOR protection
 - Secure invitation tokens
 - Upload validation
 - Path traversal protection
-
-</td>
-</tr>
-</table>
-
----
-
-# 🧠 Engineering Highlights
-
-TripNest was built as a full-stack engineering project rather than a frontend-only prototype.
-
-## 💰 Financially Safe Money Handling
-
-Money is represented using **integer minor units** instead of floating-point values.
-
-```text
-₹1,250.50
-     ↓
-125050 minor units
-     ↓
-BigInt arithmetic
-     ↓
-Deterministic financial calculations
-```
-
-This approach is used across expenses, splits, balances, settlements, and budget calculations.
-
----
-
-## 🏛️ Backend-Authoritative Architecture
-
-Financial and security-sensitive decisions remain on the backend.
-
-The frontend does not independently determine:
-
-- User permissions
-- Expense ownership
-- Balances
-- Settlement state
-- Financial calculations
-- Trip membership
-- Access control
-
-Instead:
-
-```text
-React Frontend
-      │
-      ▼
-Express API
-      │
-      ▼
-Business Logic
-      │
-      ▼
-Prisma
-      │
-      ▼
-PostgreSQL
-```
-
----
-
-## 🤖 AI With Guardrails
-
-TripNest's AI is designed as an assistant rather than an autonomous database actor.
-
-```text
-User
- │
- ▼
-Trip Context
- │
- ▼
-AI Request
- │
- ▼
-AI Proposal
- │
- ▼
-User Review
- │
- ▼
-Backend Validation
- │
- ▼
-Database
-```
-
-AI suggestions are not intended to silently modify trip data.
-
-The AI context distinguishes between:
-
-- Verified application data
-- Unavailable external data
-- Model-generated suggestions
-
----
-
-## 🔐 Security-Oriented Design
-
-TripNest includes multiple layers of protection:
-
-- Argon2id password hashing
-- JWT authentication
-- Password reset tokens
-- Rate limiting
-- Helmet security headers
-- CORS configuration
-- Zod request validation
-- Role-based access control
-- IDOR protection
-- Secure invitation tokens
-- Upload MIME/type validation
-- File-size restrictions
-- Path traversal protection
 - Idempotency for critical operations
 
 ---
 
-# 🏗️ Architecture
+## 🛠️ Tech Stack
 
-```text
-                         ┌──────────────────────┐
-                         │      TripNest UI     │
-                         │   React + TypeScript │
-                         └──────────┬───────────┘
-                                    │
-                                  HTTPS
-                                    │
-                                    ▼
-                         ┌──────────────────────┐
-                         │     Express API      │
-                         │    Node + TypeScript │
-                         └──────────┬───────────┘
-                                    │
-                 ┌──────────────────┼──────────────────┐
-                 │                  │                  │
-                 ▼                  ▼                  ▼
-          ┌─────────────┐    ┌─────────────┐    ┌──────────────┐
-          │ PostgreSQL  │    │  Socket.IO  │    │ External APIs│
-          │   Prisma    │    │   Realtime  │    │ Maps/Weather │
-          └─────────────┘    └─────────────┘    └───────┬──────┘
-                                                        │
-                                                        ▼
-                                                 ┌─────────────┐
-                                                 │   Ollama    │
-                                                 │  Local AI   │
-                                                 └─────────────┘
-```
-
----
-
-# 🛠️ Technology Stack
-
-## Frontend
+### Frontend
 
 | Technology | Purpose |
 |---|---|
 | React | UI |
 | TypeScript | Type safety |
-| Vite | Development & build |
+| Vite | Build tooling |
 | React Router | Routing |
 | TanStack Query | Server state |
 | React Hook Form | Forms |
 | Zod | Validation |
 | Tailwind CSS | Styling |
-| Radix UI | Accessible components |
-| Lucide | Icons |
 | MapLibre GL JS | Maps |
 | Socket.IO Client | Realtime |
-| React Markdown | AI responses |
 
-## Backend
+### Backend
 
 | Technology | Purpose |
 |---|---|
-| Node.js 22 | Runtime |
-| Express | API |
+| Node.js | Runtime |
+| Express | REST API |
 | TypeScript | Type safety |
 | Prisma | ORM |
 | PostgreSQL | Database |
@@ -431,12 +302,11 @@ TripNest includes multiple layers of protection:
 | Argon2id | Password hashing |
 | Zod | Validation |
 | Socket.IO | Realtime |
-| Multer | Upload handling |
+| Multer | File uploads |
 | Pino | Logging |
 | Helmet | Security |
-| Nodemailer | Email |
 
-## Infrastructure
+### Infrastructure
 
 | Service | Purpose |
 |---|---|
@@ -445,21 +315,21 @@ TripNest includes multiple layers of protection:
 | Supabase | PostgreSQL |
 | Docker | Local infrastructure |
 
-## External Services
+### External Services
 
 | Service | Purpose |
 |---|---|
+| Geoapify | POI discovery |
 | OpenStreetMap | Geographic data |
 | OpenFreeMap | Map tiles |
 | Nominatim | Geocoding |
-| Overpass API | Place discovery |
-| Open-Meteo | Weather |
 | OSRM | Routing |
-| Ollama | Local AI |
+| Open-Meteo | Weather |
+| Ollama / configured AI provider | AI assistance |
 
 ---
 
-# 📦 Project Structure
+## 📁 Project Structure
 
 ```text
 TripNest/
@@ -468,164 +338,62 @@ TripNest/
 │   ├── prisma/
 │   │   ├── migrations/
 │   │   └── schema.prisma
-│   │
 │   ├── src/
 │   │   ├── config/
 │   │   ├── controllers/
 │   │   ├── middleware/
 │   │   ├── routes/
 │   │   ├── services/
-│   │   ├── utils/
-│   │   └── server.ts
-│   │
+│   │   └── providers/
 │   ├── tests/
-│   ├── Dockerfile
-│   ├── package.json
-│   └── .env.example
+│   └── package.json
 │
 ├── frontend/
 │   ├── src/
-│   │   ├── app/
 │   │   ├── components/
 │   │   ├── features/
 │   │   ├── hooks/
 │   │   ├── layouts/
-│   │   ├── pages/
-│   │   ├── services/
-│   │   └── types/
-│   │
-│   ├── public/
+│   │   └── pages/
 │   └── package.json
 │
 ├── puppeteer_qa/
-│   ├── scripts/
-│   └── tests/
-│
 ├── DEPLOYMENT.md
-├── .gitignore
 └── README.md
 ```
 
 ---
 
-# 🧩 Core Domain
+## 🚀 Getting Started
 
-```text
-Trip
- │
- ├── Members
- │    └── Invitations
- │
- ├── Places
- │
- ├── Itinerary
- │
- ├── Expenses
- │    ├── Equal
- │    ├── Exact
- │    ├── Percentage
- │    └── Shares
- │
- ├── Balances
- │
- ├── Settlements
- │
- ├── Budget
- │
- ├── Weather
- │
- ├── Recommendations
- │
- ├── Notifications
- │
- ├── Memories
- │
- └── AI Assistance
-```
-
----
-
-# 🚀 Getting Started
-
-## Prerequisites
-
-Make sure you have:
+### Prerequisites
 
 - Node.js 22+
 - npm
 - Docker
 - Git
 - PostgreSQL
-- Ollama *(optional for AI features)*
 
----
-
-## 1. Clone the Repository
+### Clone
 
 ```bash
 git clone https://github.com/Meenu-Pandey/TripNest.git
 cd TripNest
 ```
 
----
-
-## 2. Start PostgreSQL
+### Start PostgreSQL
 
 ```bash
 docker compose up -d postgres
 ```
 
-Verify:
-
-```bash
-docker compose ps
-```
-
----
-
-## 3. Configure Backend
+### Backend
 
 ```bash
 cd backend
-```
-
-Create your environment file:
-
-```text
-.env
-```
-
-Use:
-
-```text
-.env.example
-```
-
-as the template.
-
----
-
-## 4. Install Backend Dependencies
-
-```bash
 npm ci
-```
-
-Generate Prisma Client:
-
-```bash
 npx prisma generate
-```
-
-Run migrations:
-
-```bash
 npx prisma migrate dev
-```
-
-Start the backend:
-
-```bash
 npm run dev
 ```
 
@@ -635,37 +403,17 @@ Backend:
 http://localhost:4000
 ```
 
-Health check:
+Health:
 
 ```text
 http://localhost:4000/health
 ```
 
-Readiness:
-
-```text
-http://localhost:4000/ready
-```
-
----
-
-## 5. Start Frontend
-
-Open another terminal:
+### Frontend
 
 ```bash
 cd frontend
-```
-
-Install dependencies:
-
-```bash
 npm ci
-```
-
-Start Vite:
-
-```bash
 npm run dev
 ```
 
@@ -675,81 +423,25 @@ Frontend:
 http://localhost:3000
 ```
 
----
+### Environment
 
-## 6. Optional: Local AI
-
-Install Ollama and pull the configured model:
-
-```bash
-ollama pull llama3.2
-```
-
-Run:
-
-```bash
-ollama run llama3.2
-```
-
-TripNest can gracefully handle the AI service being unavailable.
-
----
-
-# 🔐 Environment Variables
-
-## Backend
-
-Copy:
+Create `backend/.env` from:
 
 ```text
 backend/.env.example
 ```
 
-to:
+Required secrets and provider keys should remain server-side.
 
-```text
-backend/.env
-```
-
-Typical configuration includes:
-
-```env
-DATABASE_URL=
-JWT_SECRET=
-JWT_EXPIRES_IN=
-NODE_ENV=
-PORT=
-CORS_ORIGIN=
-APP_URL=
-
-EMAIL_PROVIDER=
-SMTP_HOST=
-SMTP_PORT=
-SMTP_SECURE=
-SMTP_USER=
-SMTP_PASSWORD=
-EMAIL_FROM=
-
-UPLOADS_DIR=
-OLLAMA_BASE_URL=
-OLLAMA_MODEL=
-```
-
-## Frontend
-
-```env
-VITE_API_URL=http://localhost:4000
-```
-
-> ⚠️ Never commit `.env` files, passwords, JWT secrets, API keys, or SMTP credentials.
+**Never commit `.env` files or API keys.**
 
 ---
 
-# 🧪 Testing
+## 🧪 Testing
 
-TripNest includes backend, frontend, integration, and browser-level testing.
+TripNest has unit, integration, component, and E2E coverage.
 
-## Backend
+### Backend
 
 ```bash
 npm run typecheck
@@ -758,7 +450,7 @@ npm run build
 npm test
 ```
 
-## Frontend
+### Frontend
 
 ```bash
 npm run typecheck
@@ -767,65 +459,52 @@ npm run build
 npm test
 ```
 
-## Browser QA
+### Final Verification
 
-Puppeteer-based QA covers important user workflows including:
+Latest full audit:
 
-- Authentication
-- Trip creation
-- Places
-- Itinerary
-- Maps
-- Expenses
-- Balances
-- Settlements
-- Budget
-- Invitations
-- Notifications
-- Memories
-- AI states
-- Responsive layouts
-- RBAC
-- IDOR scenarios
+- Backend unit: **383/383 passed**
+- Backend integration: **217/217 passed**
+- Frontend tests: **188/188 passed**
+- Backend typecheck: **PASS**
+- Frontend typecheck: **PASS**
+- Backend lint: **PASS**
+- Frontend lint: **PASS**
+- Backend build: **PASS**
+- Frontend build: **PASS**
+- Local E2E journey: **PASS**
+- Production E2E: **PASS**
+- Security/IDOR audit: **PASS**
+- Production Geoapify discovery: **PASS**
+- Production financial verification: **PASS**
 
 ---
 
-# 🌍 Production Deployment
-
-TripNest is deployed using:
+## 🌍 Production
 
 ```text
-Frontend  → Vercel
-Backend   → Render
-Database  → Supabase PostgreSQL
-Maps      → MapLibre + OpenFreeMap
-Weather   → Open-Meteo
-Geocoding → Nominatim
-Routing   → OSRM
-AI        → Ollama
+Frontend → Vercel
+Backend  → Render
+Database → Supabase PostgreSQL
 ```
 
-## Live Application
+### Live Application
 
-### 🌐 Frontend
+🌐 **Frontend**
 
 https://trip-nest-eight-pied.vercel.app/
 
-### ⚡ Backend API
+⚡ **Backend**
 
 https://tripnest-zytu.onrender.com/
 
-### ❤️ Health Check
+❤️ **Health**
 
 https://tripnest-zytu.onrender.com/health
 
-### 🟢 Readiness Check
-
-https://tripnest-zytu.onrender.com/ready
-
 ---
 
-# 📡 API Design
+## 🔌 API
 
 TripNest exposes a versioned REST API:
 
@@ -833,7 +512,7 @@ TripNest exposes a versioned REST API:
 /api/v1
 ```
 
-Major resource groups include:
+Main resources include:
 
 ```text
 /auth
@@ -849,108 +528,27 @@ Major resource groups include:
 /weather
 /geocoding
 /recommendations
-/discover
 /notifications
 /memories
 ```
 
-The frontend communicates with the backend through a centralized API layer rather than making direct requests to third-party services.
+The frontend communicates with the TripNest backend through a centralized
+API layer rather than directly calling third-party services.
 
 ---
 
-# 💡 Product Principles
+## 👩‍💻 Author
 
-### 1. One Trip, One Workspace
-
-The trip is the central product entity.
-
-### 2. Backend Is the Source of Truth
-
-Sensitive business logic stays on the server.
-
-### 3. Money Must Be Deterministic
-
-Financial calculations use integer minor units and BigInt arithmetic.
-
-### 4. AI Should Assist, Not Silently Act
-
-AI-generated suggestions remain reviewable.
-
-### 5. External Services Can Fail
-
-Weather, maps, geocoding, routing, and AI integrations are designed to degrade gracefully.
-
-### 6. Collaboration Comes First
-
-TripNest is designed around groups rather than individual travel planning.
-
----
-
-# 🗺️ Roadmap
-
-## Completed
-
-- [x] Authentication
-- [x] User profiles
-- [x] Trip management
-- [x] Invitations
-- [x] Role-based access
-- [x] Places
-- [x] Geocoding
-- [x] Itinerary
-- [x] Expense splitting
-- [x] Balances
-- [x] Settlements
-- [x] Budget planning
-- [x] Weather
-- [x] Recommendations
-- [x] Map integration
-- [x] Notifications
-- [x] Memories
-- [x] AI assistance
-- [x] Production deployment
-
-## Future Improvements
-
-- [ ] Production object storage
-- [ ] Expanded realtime coverage
-- [ ] Richer recommendation models
-- [ ] Advanced trip analytics
-- [ ] Additional notification channels
-- [ ] Custom domain
-- [ ] Expanded observability
-- [ ] More travel integrations
-
----
-
-# 👩‍💻 About
-
-Built by **Meenu Pandey**.
-
-Computer Science & Engineering graduate focused on:
-
-- Backend Development
-- Full-Stack Development
-- REST APIs
-- Database Design
-- AI-integrated Applications
-- Secure Software Engineering
-
-### Connect
-
-[![GitHub](https://img.shields.io/badge/GitHub-Meenu--Pandey-181717?style=flat-square&logo=github)](https://github.com/Meenu-Pandey)
-
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-Meenu%20Pandey-0A66C2?style=flat-square&logo=linkedin&logoColor=white)](https://linkedin.com/in/mpandey4/)
-
----
+### Meenu Pandey
+[LinkedIn](https://linkedin.com/in/mpandey4/)
 
 <div align="center">
 
-## ✈️ TripNest
+### ✈️ TripNest
 
-### Plan together. Travel smarter. Remember everything.
+**Plan together. Travel smarter. Remember everything.**
 
-[🌍 Live Demo](https://trip-nest-eight-pied.vercel.app/) •
+[🌍 Live Demo](https://trip-nest-eight-pied.vercel.app/) ·
 [💻 GitHub](https://github.com/Meenu-Pandey/TripNest)
 
 </div>
