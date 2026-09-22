@@ -190,39 +190,39 @@ export class OverpassProvider implements PoiDiscoveryProvider {
           const seenNames = new Set<string>();
 
           for (const el of data.elements) {
-          if (!el.tags || !el.tags.name) continue; // Skip unnamed POIs
+            if (!el.tags || !el.tags.name) continue; // Skip unnamed POIs
 
-          const lat = el.lat ?? el.center?.lat;
-          const lon = el.lon ?? el.center?.lon;
-          if (!lat || !lon) continue;
+            const lat = el.lat ?? el.center?.lat;
+            const lon = el.lon ?? el.center?.lon;
+            if (!lat || !lon) continue;
 
-          // Simple deduplication by exact name
-          const nameKey = el.tags.name.toLowerCase();
-          if (seenNames.has(nameKey)) continue;
-          seenNames.add(nameKey);
+            // Simple deduplication by exact name
+            const nameKey = el.tags.name.toLowerCase();
+            if (seenNames.has(nameKey)) continue;
+            seenNames.add(nameKey);
 
-          const category = this.mapCategory(el.tags);
-          const distanceKm = this.calculateDistanceKm(params.latitude, params.longitude, lat, lon);
+            const category = this.mapCategory(el.tags);
+            const distanceKm = this.calculateDistanceKm(params.latitude, params.longitude, lat, lon);
 
-          let address = null;
-          if (el.tags['addr:street']) {
-            address = `${el.tags['addr:housenumber'] ? el.tags['addr:housenumber'] + ' ' : ''}${el.tags['addr:street']}`;
-          } else if (el.tags['addr:city']) {
-            address = el.tags['addr:city'];
-          }
+            let address = null;
+            if (el.tags['addr:street']) {
+              address = `${el.tags['addr:housenumber'] ? el.tags['addr:housenumber'] + ' ' : ''}${el.tags['addr:street']}`;
+            } else if (el.tags['addr:city']) {
+              address = el.tags['addr:city'];
+            }
 
-          results.push({
-            externalProvider: 'openstreetmap',
-            externalPlaceId: `${el.type}/${el.id}`,
-            name: el.tags.name,
-            category,
-            latitude: lat,
-            longitude: lon,
-            address,
-            description: el.tags.description || el.tags.wikipedia || null,
-            distanceKm,
-            tags: el.tags,
-          });
+            results.push({
+              externalProvider: 'openstreetmap',
+              externalPlaceId: `${el.type}/${el.id}`,
+              name: el.tags.name,
+              category,
+              latitude: lat,
+              longitude: lon,
+              address,
+              description: el.tags.description || el.tags.wikipedia || null,
+              distanceKm,
+              tags: el.tags,
+            });
           }
 
           results.sort((a, b) => a.distanceKm - b.distanceKm);
