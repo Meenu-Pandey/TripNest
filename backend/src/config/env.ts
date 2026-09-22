@@ -53,6 +53,8 @@ export const envSchema = z.object({
     z.enum(['ollama', 'openrouter']).default('ollama'),
   ),
   OPENROUTER_API_KEY: z.preprocess(emptyStringToUndefined, z.string().optional()),
+  // POI Service configuration
+  GEOAPIFY_API_KEY: z.preprocess(emptyStringToUndefined, z.string().optional()),
   AI_MODEL: z.preprocess(
     emptyStringToUndefined,
     z.string().default('openrouter/free'),

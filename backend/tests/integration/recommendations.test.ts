@@ -122,3 +122,72 @@ describe('GET /api/v1/trips/:tripId/recommendations', () => {
     expect(res.status).toBe(400);
   });
 });
+
+describe('GET /api/v1/trips/:tripId/recommendations/discover', () => {
+  const originalFetch = global.fetch;
+
+  afterEach(() => {
+    global.fetch = originalFetch;
+    jest.restoreAllMocks();
+  });
+
+  it('returns discovered places for an authorized trip member using Geoapify provider', async () => {
+    const mockFeature = {
+      type: 'Feature',
+      properties: {
+        place_id: 'geo_discover_1',
+        name: 'Louvre Museum',
+        formatted: '75001 Paris, France',
+        lat: 48.8606,
+        lon: 2.3376,
+        categories: ['entertainment.museum', 'tourism.sights'],
+        description: 'Famous museum',
+        distance: 1200,
+        city: 'Paris',
+        country: 'France',
+      },
+      geometry: {
+        type: 'Point',
+        coordinates: [2.3376, 48.8606],
+      },
+    };
+
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ type: 'FeatureCollection', features: [mockFeature] }),
+    } as Response);
+
+    const owner = await registerUser('discover.owner@example.com');
+    const tripId = await createTrip(owner.token);
+
+    const res = await request(app)
+      .get(`/api/v1/trips/${tripId}/recommendations/discover?latitude=48.8584&longitude=2.2945&radiusMeters=3000`)
+      .set('Authorization', `Bearer ${owner.token}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.available).toBe(true);
+    expect(res.body.data.center).toEqual({ latitude: 48.8584, longitude: 2.2945 });
+    expect(res.body.data.results).toHaveLength(1);
+
+    const place = res.body.data.results[0];
+    expect(place.externalProvider).toBe('geoapify');
+    expect(place.externalPlaceId).toBe('geo_discover_1');
+    expect(place.name).toBe('Louvre Museum');
+    expect(place.category).toBe('Culture');
+    expect(place.latitude).toBe(48.8606);
+    expect(place.longitude).toBe(2.3376);
+    expect(place.address).toBe('75001 Paris, France');
+  });
+
+  it('rejects unauthenticated requests to discover endpoint', async () => {
+    const owner = await registerUser('unauthdiscover.owner@example.com');
+    const tripId = await createTrip(owner.token);
+
+    const res = await request(app)
+      .get(`/api/v1/trips/${tripId}/recommendations/discover?latitude=48.8584&longitude=2.2945`);
+
+    expect(res.status).toBe(401);
+  });
+});

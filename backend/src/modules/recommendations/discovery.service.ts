@@ -1,7 +1,8 @@
 import { requireTripMembership } from '@/modules/trips/trip-access.service';
 import { NominatimProvider } from '@/providers/geocoding/nominatimProvider';
 import { OverpassProvider } from '@/providers/poi/overpassProvider';
-import type { DiscoveredPoi } from '@/providers/poi/poiDiscoveryProvider.interface';
+import { GeoapifyPoiProvider } from '@/providers/poi/geoapifyPoiProvider';
+import type { PoiDiscoveryProvider, DiscoveredPoi } from '@/providers/poi/poiDiscoveryProvider.interface';
 
 export interface DiscoveryInput {
   latitude?: number;
@@ -23,7 +24,16 @@ export interface DiscoveryResult {
 
 export class DiscoveryService {
   private readonly geocoding = new NominatimProvider();
-  private readonly poiProvider = new OverpassProvider();
+  private readonly primaryPoiProvider: PoiDiscoveryProvider;
+  private readonly fallbackPoiProvider: PoiDiscoveryProvider;
+
+  constructor(
+    primaryPoiProvider?: PoiDiscoveryProvider,
+    fallbackPoiProvider?: PoiDiscoveryProvider,
+  ) {
+    this.primaryPoiProvider = primaryPoiProvider ?? new GeoapifyPoiProvider();
+    this.fallbackPoiProvider = fallbackPoiProvider ?? new OverpassProvider();
+  }
 
   async discover(tripId: string, requesterId: string, input: DiscoveryInput): Promise<DiscoveryResult> {
     const { trip } = await requireTripMembership(tripId, requesterId);
@@ -46,25 +56,36 @@ export class DiscoveryService {
       lon = firstResult.longitude;
     }
 
-    // 2. Query POI Provider
-    try {
-      const results = await this.poiProvider.discoverNearby({
-        latitude: lat!,
-        longitude: lon!,
-        radiusMeters: input.radiusMeters ?? 5000,
-        categories: input.categories,
-        limit: input.limit ?? 50,
-      });
+    // 2. Query Primary POI Provider (Geoapify) with Fallback to Overpass
+    const queryParams = {
+      latitude: lat!,
+      longitude: lon!,
+      radiusMeters: input.radiusMeters ?? 5000,
+      categories: input.categories,
+      limit: input.limit ?? 50,
+    };
 
-      return {
-        available: true,
-        center: { latitude: lat!, longitude: lon! },
-        results,
-      };
-    } catch (err) {
-      const reason = err instanceof Error ? err.message : 'POI_PROVIDER_UNAVAILABLE';
-      return { available: false, reason };
+    let results: DiscoveredPoi[] | undefined;
+    let lastError: Error | undefined;
+
+    try {
+      results = await this.primaryPoiProvider.discoverNearby(queryParams);
+    } catch (primaryErr) {
+      lastError = primaryErr instanceof Error ? primaryErr : new Error(String(primaryErr));
+      // Attempt fallback provider if primary provider fails or is unconfigured
+      try {
+        results = await this.fallbackPoiProvider.discoverNearby(queryParams);
+      } catch (fallbackErr) {
+        const reason = fallbackErr instanceof Error ? fallbackErr.message : lastError.message;
+        return { available: false, reason };
+      }
     }
+
+    return {
+      available: true,
+      center: { latitude: lat!, longitude: lon! },
+      results: results ?? [],
+    };
   }
 }
 
